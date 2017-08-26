@@ -1,23 +1,30 @@
-//
-//  main.cpp
-//  ExactSV : Exact Detection of Structural Variation
-//
-//  Created by Ameerhosein Afshinfard - BRLab - Sharif Uiversity of Technology
-//  Copyright (c) 2017 Ameerhosein Afshinfard. All rights reserved.
-//
-//
+/**
+ * @file    main.cpp
+ * @author  Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+ *                                  <afshinfard (at) gmail.com>
+ *          Bioinformatics Research Lab - Sharif Uiversity of Technology
+ *
+ * @cite
+ *
+ * @copyright (c) 2017
+ *
+ *      Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+ *                              <afshinfard (at) gmail.com>
+ *      Damoon Nashta-ali       <damoun_dna (at) yahoo.com>
+ *      Seyed Abolfazl Motahari <motahari (at) sharif.edu
+ *
+ **/
 
 #include "Header.h"
 #include "ExtraTools.h"
 #include "DataStructures.h"
 #include "SureMap.h"
 #include "LocalAligner.h"
+
 // ================================|
 //> Global Vars:                   |
 // ================================|
 //                                 |
-
-//boost::atomic<bool> reading[seed2], writing[seed2];
 int characterPerRow;
 int fileCounter = 1; // to remember current active file
 std::mutex readFileMutex;
@@ -26,6 +33,7 @@ std::mutex writeInformativesMutex;
 long long totReads = 0;
 long long readCounter = 0;
 long long genomeLength = 0;
+readMappingInfo globalRMI[MAXTHREADS];
 
 int shiftSteps = chunkSize / shiftIterations ;
 //                                 |
@@ -36,8 +44,31 @@ int shiftSteps = chunkSize / shiftIterations ;
 // ================================|
 //                                 |
 
-mapResult sureMap( string readChunk ){
-    // Nothing Yet
+mapResult uniqueMap( string readChunk , string quality, int idx ){
+    // [Completed]
+    // Func aim:
+    // given a read chunk, it's quality an thread index
+    // return the unique mapping result for this chunk
+
+    globalRMI[idx].read = readChunk;
+    globalRMI[idx].qual = quality;
+    globalRMI[idx].readName = "?";
+
+    vector< mappingInfo > mps = getAllMapping( idx, globalRMI[idx] );
+
+    string mos = readChunk;
+    string rev = reverseComplement( readChunk );
+    if( mps.size() > 1 ){
+        cerr<<"not a unique search";
+        return mapResult();
+    }
+    mappingInfo ix = mps[0];
+    if( ix.flag != 4 ){
+        ix.cigar = getCigar( ix.refPos, ( ix.flag == 0 ) ? mos : rev, ix.acceptedValue, idx  );
+        ix.refPos = ix.refPos - ix.acceptedValue + ix.cigar.second;
+    }else
+        return mapResult();
+    return mapResult(ix.refPos,( ix.flag == 0 ? false : true ));
 
 }
 
@@ -213,7 +244,7 @@ bool ifAlignable( long long startLoci, string readSegment, bool isReverse, int *
 
     for(int i=0;i < (int)(indelShiftLocal*readlen);i++)
         seqConstantB += "A";
-    readString += seqConstantB;
+    readSegment += seqConstantB;
 
     LocalAligner *local;
     local = new LocalAligner(readSegment, genomeString, gapPen, misPen, matchPen, (int)(indelShiftLocal*readlen), (int)(editDistance*readlen) );
@@ -221,7 +252,7 @@ bool ifAlignable( long long startLoci, string readSegment, bool isReverse, int *
     local->backtrack();
     //cout//<<local->realCigar << endl;
     //cout<<local->cigar << endl;
-    score = local->mScore;
+    int score = local->mScore;
     char isAlignable = (score > localAlThreshold ? 2 : 0 );
     if( isAlignable ){
         *alignShiftPos = local->totalGapr - local->totalGapfa;
@@ -282,9 +313,10 @@ long extendManager(long from, long until, string read, solvedFragInfo* anchorExt
     }
 }
 
-interval anchorAndExtend(string read, string qc, vector<interval>* checkStack, int it,
-                         array<vector<mapResult>, MAX_SHIFT_ITER>* mapResults,
-                         vector<solvedFragInfo>* clusters){
+interval anchorAndExtend(string read ,string qc ,vector<interval>* checkStack ,int it
+                         ,array<vector<mapResult>, MAX_SHIFT_ITER>* mapResults
+                         ,vector<solvedFragInfo>* clusters
+                         ,int idx ){
     // Remained: inExtnd
     // FUNC aim:
     // Given [a single read], its [quality], its [incomplete mapping records] for different shifting
@@ -295,16 +327,21 @@ interval anchorAndExtend(string read, string qc, vector<interval>* checkStack, i
     interval toCheck = checkStack->back();
     checkStack->pop_back();
 
-    bool isFinalChunk = ( ((int)(currentRead.length() + chunkSize - 20) / chunkSize) == toCheck.end ? true : false );
+    bool isFinalChunk = ( ((int)(read.length() + chunkSize - 20) / chunkSize) == toCheck.end ? true : false );
 
     // =====================
     // Check First and Last:
 
     if( mapResults->at(it)[toCheck.start].position == 0 )
-        mapResults->at(it)[toCheck.start] = sureMap( read.substr((toCheck.start-1)*chunkSize, chunkSize) );
+        mapResults->at(it)[toCheck.start] = uniqueMap( read.substr((toCheck.start-1)*chunkSize, chunkSize)
+                                                       ,qc.substr((toCheck.start-1)*chunkSize, chunkSize)
+                                                       ,idx );
     if( mapResults->at(it)[toCheck.end].position == 0 )
-        mapResults->at(it)[toCheck.end] = sureMap( ( isFinalChunk ? read.substr((toCheck.end-1)*chunkSize)
-                                                                  : read.substr((toCheck.end-1)*chunkSize, chunkSize))  );
+        mapResults->at(it)[toCheck.end] = uniqueMap( ( isFinalChunk ? read.substr((toCheck.end-1)*chunkSize)
+                                                                  : read.substr((toCheck.end-1)*chunkSize, chunkSize))
+                                                     ,( isFinalChunk ? qc.substr((toCheck.end-1)*chunkSize)
+                                                                     : qc.substr((toCheck.end-1)*chunkSize, chunkSize))
+                                                     ,idx );
     if( mapResults->at(it)[toCheck.start].isReverse == mapResults->at(it)[toCheck.end].isReverse &&
             abs(mapResults->at(it)[toCheck.start].position - mapResults->at(it)[toCheck.end].position
             - pow(-1,(mapResults->at(it)[toCheck.start].isReverse == true ? 1:0 ))*(toCheck.start-toCheck.end)*chunkSize )
@@ -332,7 +369,9 @@ interval anchorAndExtend(string read, string qc, vector<interval>* checkStack, i
     for (int i = 1; i < half; i++) {
         // one from left with all rights
         if( mapResults->at(it)[toCheck.start+i].position == 0 )
-            mapResults->at(it)[toCheck.start+i] = sureMap( read.substr((toCheck.start+i-1)*chunkSize, chunkSize) );
+            mapResults->at(it)[toCheck.start+i] = uniqueMap( read.substr((toCheck.start+i-1)*chunkSize, chunkSize)
+                                                             ,qc.substr((toCheck.start+i-1)*chunkSize, chunkSize)
+                                                             ,idx );
         if( mapResults->at(it)[toCheck.start+i].position > 0 ){
             for(int j = 0 ; j < i ; j++){
                 if( mapResults->at(it)[toCheck.start+i].isReverse == mapResults->at(it)[toCheck.end-j].isReverse &&
@@ -354,7 +393,9 @@ interval anchorAndExtend(string read, string qc, vector<interval>* checkStack, i
             break;
         // one from right with all lefts
         if( mapResults->at(it)[toCheck.end-i].position == 0 )
-            mapResults->at(it)[toCheck.end-i] = sureMap( read.substr((toCheck.end-i-1)*chunkSize, chunkSize) );
+            mapResults->at(it)[toCheck.end-i] = uniqueMap( read.substr((toCheck.end-i-1)*chunkSize, chunkSize)
+                                                           ,qc.substr((toCheck.end-i-1)*chunkSize, chunkSize)
+                                                           ,idx );
         if( mapResults->at(it)[toCheck.end-i].position > 0 ){
             for(int j = 0 ; j <= i ; j++){
                 if( mapResults->at(it)[toCheck.start+j].isReverse == mapResults->at(it)[toCheck.end-i].isReverse &&
@@ -380,7 +421,9 @@ interval anchorAndExtend(string read, string qc, vector<interval>* checkStack, i
         // check Middle with all
         long middle = toCheck.start+half+1;
         if( mapResults->at(it)[middle].position == 0 )
-            mapResults->at(it)[middle] = sureMap( read.substr((toCheck.start+half+1-1)*chunkSize, chunkSize) );
+            mapResults->at(it)[middle] = uniqueMap( read.substr((toCheck.start+half+1-1)*chunkSize, chunkSize)
+                                                    ,qc.substr((toCheck.start+half+1-1)*chunkSize, chunkSize)
+                                                    ,idx );
         if( mapResults->at(it)[middle].position > 0 ){
             for (int j = 0; j < half; j++) {
                 // with left
@@ -461,7 +504,7 @@ void inline determineCheckStack( array<vector<bool>, MAX_SHIFT_ITER>* isSolvedCh
     // nothing yet
 }
 
-void processing( long long* readIndex, string* readsName, string* reads, string *qc, int cntReads){
+void processing( long long* readIndex ,string* readsName ,string* reads ,string *qc ,int cntReads ,int idx ){
     // [Complete itself]
 
     ofstream ofstr1(informativeFileName.c_str());
@@ -501,7 +544,7 @@ void processing( long long* readIndex, string* readsName, string* reads, string 
             while( !checkStack.empty() ){
                 interval solvedRegion =
                         anchorAndExtend( currentRead, currentQC, &checkStack, j,
-                                         &mapResults, &clusters);
+                                         &mapResults, &clusters ,idx );
                 if( solvedRegion.start != 0 )
                     for(int k = solvedRegion.start ; k <= solvedRegion.end ; k++)
                         // only needed for determining checkStack in future anchoring iterations
@@ -636,7 +679,7 @@ void mt_ReadAndProcess(ifstream* fin,int* idt){
         }
         // Part 2: Process reads one-by-one
 
-        //processing(&readsIndex, &readsName, &reads, &qc, cntReads);
+        //processing( &readsIndex ,&readsName ,&reads ,&qc ,cntReads ,*idt);
         //cerr << "\n Alaki Masalan Processing Reads...\n";
         //        long long matched = 0;
         //        for( int i = 0; i < core; i++ )
@@ -652,9 +695,68 @@ void mt_ReadAndProcess(ifstream* fin,int* idt){
     }
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
     QCoreApplication a(argc, argv);
+
+    // ===========================================================================================
+    // SureMap main:
+    for( int i = 0 ; i < MAXTHREADS ; i++ ){
+        minVal[i] = 1000;
+        mxFailed[idx] = 1000;
+
+        globalRMI[idx].uniqeOption = globalUniqeOption;
+        globalRMI[idx].maxReport = globalMaxReport;
+        globalRMI[idx].bestOne = globalBestOne;
+        globalRMI[idx].maxDiffMismatch = globalMaxDiffMismatch;
+        globalRMI[idx].maxDiffEdit = globalMaxDiffEdit;
+        globalRMI[idx].gap = globalGap;
+        globalRMI[idx].noisePercent = globalNoisePercent;
+
+    }
+    if( globalMode == "fast" )
+        Mode = 4, mc =  4;
+    else if( globalMode == "normal" )
+        Mode = 3, mc = 10;
+
+    std::srand ( unsigned ( std::time(0) ) );
+    vector< unsigned short > test;
+    int32_t opt,nqrys,maxqry,i;
+    char* idxname;
+    char* qryname;
+    ///////////////////////////
+    // Setting:
+    idxname = "";
+    qryname = "";
+    outputAdr = "";
+
+    FILE* f;
+    uint8_t** queries;
+    char buf[4096];
+    uint32_t start,stop,cnt;
+    string args[100];
+
+    // p2
+
+    ofstream fout( outputAdr );
+    fout.close();
+    string refPrefix = idxname;
+    refPrefix = getValidPrefix( refPrefix );
+    //cerr << refPrefix << endl;
+    string fastqAdr = qryname;
+    string fwAdr = refPrefix + ".fm";
+    string rvAdr = refPrefix + ".rev.fm";
+    string rfInf = refPrefix;
+    loadRef( rfInf );
+    cerr << "--Ref loading is done!\n";
+    /* load index */
+    fmIdx.load(fwAdr);
+    cerr << "--forward BWT loading is done!\n";
+    revIdx.load( rvAdr );
+    cerr << "--Reverse BWT loading is done!\n";
+    totChar = fmIdx.sigma;
+    Aligner( fastqAdr );
+
+    // ===========================================================================================
 
     chdir(MAINADDRESS);
     characterPerRow = findCharacterPerRow(genomeName);

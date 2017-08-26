@@ -18,6 +18,9 @@ HEADERS += \
     ExtraTools.h \
     DataStructures.h \
     SureMap.h \
-    LocalAligner.h
+    LocalAligner.h \
+    BWT2.h \
+    CompressedString.h \
+    BitArray.h
 
 LIBS += -pthread
