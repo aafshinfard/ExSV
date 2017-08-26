@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-// #include <boost/atomic.hpp> // for sureMap
+#include <boost/atomic.hpp>
 #include <unistd.h>
 #include <iostream>
 #include <string>
@@ -38,6 +38,7 @@ using namespace std;
 #define seed1 1000000007
 #define seed2  1000019
 #define seed3 100000007
+#define MAXTHREADS 40
 #define MAXREADSIZE 10000
 #define MAX_SHIFT_ITER 5
 #define WRITEWHEN 100
@@ -67,6 +68,7 @@ int editDistance = 2;
 int gapPen = -8, misPen = -5, matchPen = 10;
 //int numGap = 5;     //numGap in Anchoring | error in Assignment
 int LocAlth = 130;
+int localAlThreshold = LocAlth;
 //int anchoringShift = 5;
 //int assignmentShift = 10; //d = chunkSize - assignmentShift
 bool runAnchoring = true;
@@ -77,11 +79,39 @@ bool logTxt = false;
 bool pairedEndedReads = false;  // if true, then reads must be in two files "readName"_1.fq and "readName"_2.fq
 bool runPhase2 = false;
 
-
-
-
-
 long long cntCOM = 0, cntBG=0;
+
+
+// SureMap running options:
+
+/* runing options */
+int mc = 10;
+int core = 1;
+int globalMaxReport = 1;
+int maxReport[MAXTHREADS];
+int globalBestOne = 0;
+string globalMode = "normal";
+int bestOne[MAXTHREADS];
+double globalNoisePercent = -0.1;
+double noisePercent[MAXTHREADS];
+int globalMaxDiffMismatch = 1;
+int maxDiffMismatch[MAXTHREADS];
+int globalMaxDiffEdit = 1;
+int maxDiffEdit[MAXTHREADS];
+int globalGap = 0;
+int gap[MAXTHREADS];
+int globalUniqeOption = 1;
+int globalLongReadNoice = 30;
+int uniqeOption[MAXTHREADS];
+string outputAdr = "report.sam";
+bool longRead = false;
+int mxFailed[MAXTHREADS];
+int minVal[MAXTHREADS];
+int hardToMap = 0;
+int Mode = 20;
+int fragLen = 500;
+
+
 //                                 |
 // ================================|
 //> End of Settings:               |
