@@ -51,13 +51,15 @@ int numberOfThreads = 8;
 // ====
 int chunkSize = 25;
 // ==== Files:
-string readsFileName = "reads3";    //string readName = "reads_k12.fq";
+string readsFileName = "reads_t1";    //string readName = "reads_k12.fq";
 int readsFileCount = 1;
-string genomeName = "Ref_SV.fa"; //string genomeName = "E_coli_K12_DH10B.fa";    //string genomeName = "chr19.fa";
-string indexName = "Ref_SV"; //string indexName = "E_coli_K12_DH10B";        //string indexName = "chr19";
-string outputDir = "/home/ameer/SVAnchoring/SV_out2/";
+string genomeName = "Chr19.fa"; //string genomeName = "E_coli_K12_DH10B.fa";    //string genomeName = "chr19.fa";
+//string indexName = "Chr19"; //string indexName = "E_coli_K12_DH10B";        //string indexName = "chr19";
+string outputDir = "/home/ameer/ExactSV/SV_out/";
 
 string informativeFileName = "informatives";
+string doubInformativeFileName = "doubInformatives";
+string unMappedFileName = "unMapped";
 //string outputDir = "/home/ubuntu/SVAnchoring/SV_out2/";
 
 // ==== Alignment Parameters:
@@ -74,7 +76,7 @@ int localAlThreshold = LocAlth;
 bool runAnchoring = true;
 bool BGLR = true;               // [true]: Left and Right Binary Genomes
                                 // [false]: only 1 BinaryGenome (less accurate and slower But less Ram usage)
-int shiftIterations = 2;        // max = MAX_SHIFT_ITER
+int shiftIterations = 1;        // max = MAX_SHIFT_ITER
 bool logTxt = false;
 bool pairedEndedReads = false;  // if true, then reads must be in two files "readName"_1.fq and "readName"_2.fq
 bool runPhase2 = false;
@@ -85,31 +87,31 @@ long long cntCOM = 0, cntBG=0;
 // SureMap running options:
 
 /* runing options */
-int mc = 10;
-int core = 1;
-int globalMaxReport = 1;
-int maxReport[MAXTHREADS];
-int globalBestOne = 0;
-string globalMode = "normal";
-int bestOne[MAXTHREADS];
-double globalNoisePercent = -0.1;
-double noisePercent[MAXTHREADS];
-int globalMaxDiffMismatch = 1;
-int maxDiffMismatch[MAXTHREADS];
-int globalMaxDiffEdit = 1;
-int maxDiffEdit[MAXTHREADS];
-int globalGap = 0;
-int gap[MAXTHREADS];
-int globalUniqeOption = 1;
-int globalLongReadNoice = 30;
-int uniqeOption[MAXTHREADS];
-string outputAdr = "report.sam";
-bool longRead = false;
-int mxFailed[MAXTHREADS];
-int minVal[MAXTHREADS];
-int hardToMap = 0;
-int Mode = 20;
-int fragLen = 500;
+//int mc = 10;
+//int core = 1;
+//int globalMaxReport = 1;
+//int maxReport[MAXTHREADS];
+//int globalBestOne = 0;
+//string globalMode = "normal";
+//int bestOne[MAXTHREADS];
+//double globalNoisePercent = -0.1;
+//double noisePercent[MAXTHREADS];
+//int globalMaxDiffMismatch = 1;
+//int maxDiffMismatch[MAXTHREADS];
+//int globalMaxDiffEdit = 1;
+//int maxDiffEdit[MAXTHREADS];
+//int globalGap = 0;
+//int gap[MAXTHREADS];
+//int globalUniqeOption = 1;
+//int globalLongReadNoice = 30;
+//int uniqeOption[MAXTHREADS];
+//string outputAdr = "report.sam";
+//bool longRead = false;
+//int mxFailed[MAXTHREADS];
+//int minVal[MAXTHREADS];
+//int hardToMap = 0;
+//int Mode = 20;
+//int fragLen = 500;
 
 
 //                                 |

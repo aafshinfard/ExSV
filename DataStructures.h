@@ -29,6 +29,15 @@ struct solvedFragInfo{
         startChunk(start_c),startPos(start_p),endChunk(end_c),endPos(end_p),isReverse(rev),shift(shiftt){}
 };
 
+struct unMappedReads{
+    string name;
+    string read;
+    string quality;
+    unMappedReads(){}
+    unMappedReads(string namee, string readd, string qualityy ):
+        name(namee),read(readd),quality(qualityy){}
+};
+
 struct informativeReadsData{
     long long index;
     string readName;

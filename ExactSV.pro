@@ -21,6 +21,7 @@ HEADERS += \
     LocalAligner.h \
     BWT2.h \
     CompressedString.h \
-    BitArray.h
+    BitArray.h \
+    tempsuremap.h
 
 LIBS += -pthread
