@@ -552,6 +552,7 @@ void newBuildDArray( int leftIdx, int rightIdx, int st, int dir, int tIdx, int D
 }
 
 
+
 vector< int > getLastRow( string s1, string s2, int maxDiff, int& bestEnd, int mode = 0 ){
     vector< int > lastRows[2];
     lastRows[0] = vector< int >( s2.length() + 1, 10 * maxDiff + 1 );
@@ -1430,7 +1431,7 @@ inline void initDbound( int idx ){
     rightIndex[idx] = 2 * MAXINPLEN;
 }
 
-bool cmpBwt( const bwtNode& a, const bwtNode& b ){
+bool cmpBwt( bwtNode& a, bwtNode& b ){
     return a.acceptedValue < b.acceptedValue;
 }
 
@@ -2141,7 +2142,7 @@ void Aligner( string fastqAdr ){
     int matched = 0 ;
 }
 
-long long loadRef( string pref ){
+void loadRef( string pref ){
     string filename = pref + ".rinfo";
     FILE* fin2 = fopen( filename.c_str(), "rb" );
     if( fin2 == NULL ){
@@ -2161,7 +2162,6 @@ long long loadRef( string pref ){
         refOffSets.push_back( pos );
     }
     refOffSets.push_back( 4000000000ULL );
-    return Ref.sz;
 }
 
 bool has_suffix(const std::string &str, const std::string &suffix)
