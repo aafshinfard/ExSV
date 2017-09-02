@@ -51,15 +51,15 @@ int numberOfThreads = 8;
 // ====
 int chunkSize = 25;
 // ==== Files:
-string readsFileName = "reads_t1";    //string readName = "reads_k12.fq";
+string readsFileName = "anom3"; //string readsFileName = "reads_t1";    //string readName = "reads_k12.fq";
 int readsFileCount = 1;
 string genomeName = "Chr19.fa"; //string genomeName = "E_coli_K12_DH10B.fa";    //string genomeName = "chr19.fa";
 //string indexName = "Chr19"; //string indexName = "E_coli_K12_DH10B";        //string indexName = "chr19";
 string outputDir = "/home/ameer/ExactSV/SV_out/";
 
-string informativeFileName = "informatives";
-string doubInformativeFileName = "doubInformatives";
-string unMappedFileName = "unMapped";
+string informativeFileName = outputDir+"informatives";
+string doubInformativeFileName = outputDir+"doubInformatives";
+string unMappedFileName = outputDir+"unMapped";
 //string outputDir = "/home/ubuntu/SVAnchoring/SV_out2/";
 
 // ==== Alignment Parameters:

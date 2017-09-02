@@ -307,7 +307,7 @@ int maxReport[MAXTHREADS];
 int globalBestOne = 0;
 string globalMode = "normal";
 int bestOne[MAXTHREADS];
-double globalNoisePercent = -0.1;
+double globalNoisePercent =-0.04;
 double noisePercent[MAXTHREADS];
 int globalMaxDiffMismatch = 1;
 int maxDiffMismatch[MAXTHREADS];

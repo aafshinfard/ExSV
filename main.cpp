@@ -26,7 +26,13 @@
 // ================================|
 //                                 |
 int characterPerRow;
+long long rdcntr = 0;
+long long kcntr = 0;
 int fileCounter = 1; // to remember current active file
+long long cnt_2informatives = 0;
+long long cnt_informatives = 0;
+long long cnt_unmapped = 0;
+std::mutex rdcntrMutex;
 std::mutex readFileMutex;
 std::mutex getGenomeHDDMutex;
 std::mutex writeInformativesMutex;
@@ -37,6 +43,10 @@ long long readCounter = 0;
 long long genomeLength = 0;
 readMappingInfo globalRMI[MAXTHREADS];
 
+ofstream ofstr_Informatives(informativeFileName.c_str());
+ofstream ofstr_2Informatives(doubInformativeFileName.c_str());
+ofstream ofstr_unMapped(unMappedFileName.c_str());
+
 int shiftSteps = chunkSize / shiftIterations ;
 //                                 |
 // ================================'
@@ -46,6 +56,42 @@ int shiftSteps = chunkSize / shiftIterations ;
 // ================================|
 //                                 |
 
+inline string revComplemACGT(string readSegment){
+    // [Completed]
+    for (char& c : readSegment) {
+        switch(c) {
+        case 'a':
+            c = 't';
+            break;
+        case 'g':
+            c = 'c';
+            break;
+        case 'c':
+            c = 'g';
+            break;
+        case 't':
+            c = 'a';
+            break;
+        case 'A':
+            c = 'T';
+            break;
+        case 'G':
+            c = 'C';
+            break;
+        case 'C':
+            c = 'G';
+            break;
+        case 'T':
+            c = 'A';
+            break;
+        default:
+            ;
+        }
+    }
+    reverse( readSegment.begin(), readSegment.end() );
+    //readSegment = string ( readSegment.rbegin(), readSegment.rend() );
+    return readSegment;
+}
 mapResult uniqueMap( string readChunk , string quality, int idx ){
     // [Completed]
     // Func aim:
@@ -54,7 +100,7 @@ mapResult uniqueMap( string readChunk , string quality, int idx ){
 
     globalRMI[idx].read = readChunk;
     globalRMI[idx].qual = quality;
-    globalRMI[idx].readName = "?";
+    // globalRMI[idx].readName = "?";
 
     vector< mappingInfo > mps = getAllMapping( idx, globalRMI[idx] );
 
@@ -69,49 +115,11 @@ mapResult uniqueMap( string readChunk , string quality, int idx ){
         ix.cigar = getCigar( ix.refPos, ( ix.flag == 0 ) ? mos : rev, ix.acceptedValue, idx  );
         ix.refPos = ix.refPos - ix.acceptedValue + ix.cigar.second;
     }else
-        return mapResult();
+        return mapResult( -1 , false  );
     return mapResult(ix.refPos,( ix.flag == 0 ? false : true ));
 
 }
 
-//void RecursiveAnchoring(int anchorFrom, int anchorTo){
-//    anchorOnce();
-//    ExtendSides();
-//}
-
-inline string revComplemACGT(string readSegment){
-    // [Complete]
-    for (char& c : readSegment) {
-        switch(c) {
-        case 'A':
-            c = 'T';
-            break;
-        case 'G':
-            c = 'C';
-            break;
-        case 'C':
-            c = 'G';
-            break;
-        case 'T':
-            c = 'A';
-            break;
-        case 'a':
-            c = 't';
-            break;
-        case 'g':
-            c = 'c';
-            break;
-        case 'c':
-            c = 'g';
-            break;
-        case 't':
-            c = 'a';
-            break;
-        }
-    }
-    readSegment = string ( readSegment.rbegin(), readSegment.rend() );
-    return readSegment;
-}
 string getGenome(){
     // [not yet]
 }
@@ -187,10 +195,29 @@ string getGenomeHDD(long long first, int length) {
     return temp;
 }
 
-void write2Informatives( vector<informativeReadsData> *informativeReads, ofstream *ofstr1 ){
+void write2Informatives( vector<informativeReadsData> *informativeReads/*, ofstream *ofstr1*/ ){
     // [Complete]
-    write2InformativesMutex.lock();
-    for ( vector<informativeReadsData>::iterator it = informativeReads->begin() ; it != informativeReads->end(); ++it){
+
+    //cerr<<"\n\n 2inf++ "<<informativeReads->size()<<endl;
+    cnt_2informatives += informativeReads->size();
+    for ( vector<informativeReadsData>::iterator it = informativeReads->begin() ; it < informativeReads->end(); it++){
+
+        for ( vector<solvedFragInfo>::iterator it2 = it->clusters.begin() ; it2 < it->clusters.end(); it2++){
+            (ofstr_2Informatives)<< (it->readName) <<"\t|\t"
+                     << (it2->startChunk)            <<  "\t"  <<  (it2->endChunk) <<  "\t"
+                     << (it2->isReverse ? "-1":"+1") <<  "\t"  <<  (it2->shift)    <<  "\t"
+                     << (it2->startPos)              <<  "\t"  <<  (it2->endPos)   <<  endl;
+        }
+    }
+
+}
+
+void writeInformatives( vector<informativeReadsData> *informativeReads/*, ofstream *ofstr1*/ ){
+    // [Complete]
+
+    //cerr<<"\n\n inf++ "<<informativeReads->size()<<endl;
+    cnt_informatives += informativeReads->size();
+    for ( vector<informativeReadsData>::iterator it = informativeReads->begin() ; it < informativeReads->end(); it++){
 
         //ofstr1<< (it->readName) << endl;
         //ofstr1<< (it->readSeq) << endl;
@@ -204,48 +231,21 @@ void write2Informatives( vector<informativeReadsData> *informativeReads, ofstrea
         //        ofstr1<<endl;
 
         //style 2:
-        for ( vector<solvedFragInfo>::iterator it2 = it->clusters.begin() ; it2 != it->clusters.end(); ++it2){
-            (*ofstr1)<< (it->index) <<"\t|\t"
+        for ( vector<solvedFragInfo>::iterator it2 = it->clusters.begin() ; it2 < it->clusters.end(); it2++){
+            (ofstr_Informatives)<< (it->readName) <<"\t|\t"
                      << (it2->startChunk)            <<  "\t"  <<  (it2->endChunk) <<  "\t"
                      << (it2->isReverse ? "-1":"+1") <<  "\t"  <<  (it2->shift)    <<  "\t"
                      << (it2->startPos)              <<  "\t"  <<  (it2->endPos)   <<  endl;
         }
     }
-    write2InformativesMutex.unlock();
 }
 
-void writeInformatives( vector<informativeReadsData> *informativeReads, ofstream *ofstr1 ){
-    // [Complete]
-    writeInformativesMutex.lock();
-    for ( vector<informativeReadsData>::iterator it = informativeReads->begin() ; it != informativeReads->end(); ++it){
-
-        //ofstr1<< (it->readName) << endl;
-        //ofstr1<< (it->readSeq) << endl;
-
-        //style 1:
-        //        ofstr1<< (it->index) <<"\t|\t";
-        //        for ( vector<solvedFragInfo>::iterator it2 = it->clusters.begin() ; it2 != it->clusters.end(); ++it2)
-        //            ofstr1<< (it2->startChunk)            <<  "\t"  <<  (it2->endChunk) <<  "\t"
-        //                  << (it2->isReverse ? "-1","+1") <<  "\t"  <<  (it2->shift)    <<  "\t"
-        //                  << (it2->startPos)              <<  "\t"  <<  (it2->endPos)   <<  "\t|\t";
-        //        ofstr1<<endl;
-
-        //style 2:
-        for ( vector<solvedFragInfo>::iterator it2 = it->clusters.begin() ; it2 != it->clusters.end(); ++it2){
-            (*ofstr1)<< (it->index) <<"\t|\t"
-                     << (it2->startChunk)            <<  "\t"  <<  (it2->endChunk) <<  "\t"
-                     << (it2->isReverse ? "-1":"+1") <<  "\t"  <<  (it2->shift)    <<  "\t"
-                     << (it2->startPos)              <<  "\t"  <<  (it2->endPos)   <<  endl;
-        }
-    }
-    writeInformativesMutex.unlock();
-}
-
-void writeUnMapped( vector<unMappedReads> *unMappeds, ofstream *ofstr1 ){
+void writeUnMapped( vector<unMappedReads>* unMappeds/*, ofstream *ofstr1*/ ){
     // [Complete]
     writeUnMappedMutex.lock();
+    cnt_unmapped += unMappeds->size();
     for ( vector<unMappedReads>::iterator it = unMappeds->begin() ; it != unMappeds->end(); ++it)
-        (*ofstr1)<< (it->name) <<"\n"<< (it->read) <<"\n"<< (it->quality) <<endl;
+        (ofstr_unMapped)<< (it->name) <<"\n"<< (it->read) <<"\n"<< (it->quality) <<endl;
     writeUnMappedMutex.unlock();
 }
 
@@ -295,11 +295,12 @@ int ifAlignable( long long startLoci, string readSegment, bool isReverse, int *a
     return isAlignable;
 }
 
-long extendManager(long from, long until, string read, solvedFragInfo* anchorExtendResult){
+long extendManager(long from, long until, string* read, solvedFragInfo* anchorExtendResult){
     // [Completed] FUNC aim:
     // to extend from from's neighbour (not from from itself) to until
     // from < until not guaranteed! based n diretion it's feasible and return number of last extended chunk
-
+    if(from == until)
+        return from;
     long long startLoci = (from > until ? anchorExtendResult->startPos :anchorExtendResult->endPos);
     int direction = (from > until ? -1 : +1);    
     bool isReverse = anchorExtendResult->isReverse;
@@ -310,15 +311,15 @@ long extendManager(long from, long until, string read, solvedFragInfo* anchorExt
 
     if(direction == 1){
         for( int i = from; i < (until-1) ; i++ )
-            fragsOfRead.push_back( read.substr(  (i*chunkSize)  , chunkSize ));
+            fragsOfRead.push_back( read->substr(  (i*chunkSize)  , chunkSize ));
 
-        if( until == (int) ((read.size() + chunkSize - 20) / chunkSize) )
-            fragsOfRead.push_back( read.substr( (until-1)*chunkSize /*, readLen-((readLen-1)/chunkSize)*chunkSize)*/ ));
+        if( until == (int) ((read->size() + chunkSize - 20) / chunkSize) )
+            fragsOfRead.push_back( read->substr( (until-1)*chunkSize /*, readLen-((readLen-1)/chunkSize)*chunkSize)*/ ));
         else
-            fragsOfRead.push_back( read.substr( (until-1)*chunkSize , chunkSize ));
+            fragsOfRead.push_back( read->substr( (until-1)*chunkSize , chunkSize ));
     }else
         for( int i = from-1; i >= until ; i-- )
-            fragsOfRead.push_back( read.substr( ((i-1)*chunkSize)  , chunkSize ));
+            fragsOfRead.push_back( read->substr( ((i-1)*chunkSize)  , chunkSize ));
 
     // ===============================================
     // let's extend from from until until if possible:
@@ -346,11 +347,32 @@ long extendManager(long from, long until, string read, solvedFragInfo* anchorExt
     }
 }
 
-interval anchorAndExtend(string read ,string qc ,vector<interval>* checkStack ,int it
+void fullExtension( string* read, vector<solvedFragInfo>* clusters, int idx ){
+    int numFrags =  ( read->size() + chunkSize - 20 ) / chunkSize;
+    sort( clusters->begin(), clusters->end() );
+
+    if( clusters->front().startChunk > 1 ){
+        extendManager( clusters->front().startChunk ,1 ,read ,&(clusters->front()) );
+    }
+    for( int i = 1 ; i < clusters->size() ; i++ ){
+        if(clusters->at(i-1).endChunk > clusters->at(i).startChunk){
+            cerr<<"\n baha'e"<<endl;
+            continue;
+        }
+        extendManager( clusters->at(i-1).endChunk ,clusters->at(i).startChunk-1 ,read ,clusters->data()+i-1 );
+        extendManager( clusters->at(i).startChunk ,clusters->at(i-1).endChunk+1 ,read ,&(clusters->at(i)) );
+    }
+    if( clusters->back().endChunk < numFrags ){
+        extendManager( clusters->back().endChunk ,numFrags ,read ,&(clusters->back()) );
+    }
+
+}
+
+interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack ,int it
                          ,array<vector<mapResult>, MAX_SHIFT_ITER>* mapResults
                          ,vector<solvedFragInfo>* clusters
                          ,int idx ){
-    // Remained: inExtnd
+    // Remained: inExtend
     // FUNC aim:
     // Given [a single read], its [quality], its [incomplete mapping records] for different shifting
     // and [asked Intervals] try to anchor and exend exactly for one cluster and push new intervals to checkStack
@@ -360,20 +382,20 @@ interval anchorAndExtend(string read ,string qc ,vector<interval>* checkStack ,i
     interval toCheck = checkStack->back();
     checkStack->pop_back();
 
-    bool isFinalChunk = ( ((int)(read.length() + chunkSize - 20) / chunkSize) == toCheck.end ? true : false );
+    bool isFinalChunk = ( ((int)(read->length() + chunkSize - 20) / chunkSize) == toCheck.end ? true : false );
 
     // =====================
     // Check First and Last:
 
     if( mapResults->at(it)[toCheck.start-1].position == 0 )
-        mapResults->at(it)[toCheck.start-1] = uniqueMap( read.substr((toCheck.start-1)*chunkSize, chunkSize)
-                                                       ,qc.substr((toCheck.start-1)*chunkSize, chunkSize)
+        mapResults->at(it)[toCheck.start-1] = uniqueMap( read->substr((toCheck.start-1)*chunkSize, chunkSize)
+                                                       ,qc->substr((toCheck.start-1)*chunkSize, chunkSize)
                                                        ,idx );
     if( mapResults->at(it)[toCheck.end-1].position == 0 )
-        mapResults->at(it)[toCheck.end-1] = uniqueMap( ( isFinalChunk ? read.substr((toCheck.end-1)*chunkSize)
-                                                                  : read.substr((toCheck.end-1)*chunkSize, chunkSize))
-                                                     ,( isFinalChunk ? qc.substr((toCheck.end-1)*chunkSize)
-                                                                     : qc.substr((toCheck.end-1)*chunkSize, chunkSize))
+        mapResults->at(it)[toCheck.end-1] = uniqueMap( ( isFinalChunk ? read->substr((toCheck.end-1)*chunkSize)
+                                                                  : read->substr((toCheck.end-1)*chunkSize, chunkSize))
+                                                     ,( isFinalChunk ? qc->substr((toCheck.end-1)*chunkSize)
+                                                                     : qc->substr((toCheck.end-1)*chunkSize, chunkSize))
                                                      ,idx );
     if( mapResults->at(it)[toCheck.start-1].isReverse == mapResults->at(it)[toCheck.end-1].isReverse &&
             abs(mapResults->at(it)[toCheck.start-1].position - mapResults->at(it)[toCheck.end-1].position
@@ -392,7 +414,7 @@ interval anchorAndExtend(string read ,string qc ,vector<interval>* checkStack ,i
     // Check others:
 
     interval anchoredInterval;
-    interval extendedInterval;
+    //interval extendedInterval;
     bool isAnchored = false;
     int half = (int) ceil((double) (toCheck.end-toCheck.start)/2);
 //    if ((toCheck.end-toCheck.start) %2 != 0) {
@@ -402,8 +424,8 @@ interval anchorAndExtend(string read ,string qc ,vector<interval>* checkStack ,i
     for (int i = 1; i < half; i++) {
         // one from left with all rights
         if( mapResults->at(it)[toCheck.start+i-1].position == 0 )
-            mapResults->at(it)[toCheck.start+i-1] = uniqueMap( read.substr((toCheck.start+i-1)*chunkSize, chunkSize)
-                                                             ,qc.substr((toCheck.start+i-1)*chunkSize, chunkSize)
+            mapResults->at(it)[toCheck.start+i-1] = uniqueMap( read->substr((toCheck.start+i-1)*chunkSize, chunkSize)
+                                                             ,qc->substr((toCheck.start+i-1)*chunkSize, chunkSize)
                                                              ,idx );
         if( mapResults->at(it)[toCheck.start+i-1].position > 0 ){
             for(int j = 0 ; j < i ; j++){
@@ -426,8 +448,8 @@ interval anchorAndExtend(string read ,string qc ,vector<interval>* checkStack ,i
             break;
         // one from right with all lefts
         if( mapResults->at(it)[toCheck.end-i-1].position == 0 )
-            mapResults->at(it)[toCheck.end-i-1] = uniqueMap( read.substr((toCheck.end-i-1)*chunkSize, chunkSize)
-                                                           ,qc.substr((toCheck.end-i-1)*chunkSize, chunkSize)
+            mapResults->at(it)[toCheck.end-i-1] = uniqueMap( read->substr((toCheck.end-i-1)*chunkSize, chunkSize)
+                                                           ,qc->substr((toCheck.end-i-1)*chunkSize, chunkSize)
                                                            ,idx );
         if( mapResults->at(it)[toCheck.end-i-1].position > 0 ){
             for(int j = 0 ; j <= i ; j++){
@@ -454,8 +476,8 @@ interval anchorAndExtend(string read ,string qc ,vector<interval>* checkStack ,i
         // check Middle with all
         long middle = toCheck.start+half-1;
         if( mapResults->at(it)[middle].position == 0 )
-            mapResults->at(it)[middle] = uniqueMap( read.substr((toCheck.start+half-1)*chunkSize, chunkSize)
-                                                    ,qc.substr((toCheck.start+half-1)*chunkSize, chunkSize)
+            mapResults->at(it)[middle] = uniqueMap( read->substr((toCheck.start+half-1)*chunkSize, chunkSize)
+                                                    ,qc->substr((toCheck.start+half-1)*chunkSize, chunkSize)
                                                     ,idx );
         if( mapResults->at(it)[middle].position > 0 ){
             for (int j = 0; j < half; j++) {
@@ -508,26 +530,27 @@ interval anchorAndExtend(string read ,string qc ,vector<interval>* checkStack ,i
     // not yet
 
     //2.a: outExtend left
-    if(anchoredInterval.start != toCheck.start ){
-        extendedInterval.start = extendManager( anchoredInterval.start, toCheck.start, read, &anchorExtendResult);
-        // push unsolved regions:
-        if((extendedInterval.start - toCheck.start) > 1)
-            checkStack->push_back( interval(toCheck.start, extendedInterval.start-1) );
-    }else
-        extendedInterval.start = toCheck.start;
-    //2.b: outExtend right
-    if(anchoredInterval.end != toCheck.end ){
-        extendedInterval.end = extendManager( anchoredInterval.end, toCheck.end, read, &anchorExtendResult);
-        // push unsolved regions:
-        if((toCheck.end - extendedInterval.end) > 1)
-            checkStack->push_back( interval(extendedInterval.end+1, toCheck.end) );
-    }else
-        extendedInterval.end = toCheck.end;
+    //    if(anchoredInterval.start != toCheck.start ){
+    //        extendedInterval.start = extendManager( anchoredInterval.start, toCheck.start, read, &anchorExtendResult);
+    //        // push unsolved regions:
+    //        if((extendedInterval.start - toCheck.start) > 1)
+    //            checkStack->push_back( interval(toCheck.start, extendedInterval.start-1) );
+    //    }else
+    //        extendedInterval.start = toCheck.start;
+    //    //2.b: outExtend right
+    //    if(anchoredInterval.end != toCheck.end ){
+    //        extendedInterval.end = extendManager( anchoredInterval.end, toCheck.end, read, &anchorExtendResult);
+    //        // push unsolved regions:
+    //        if((toCheck.end - extendedInterval.end) > 1)
+    //            checkStack->push_back( interval(extendedInterval.end+1, toCheck.end) );
+    //    }else
+    //        extendedInterval.end = toCheck.end;
 
     // =====================
     // return solved interval
     clusters->push_back(anchorExtendResult);
-    return extendedInterval;
+    //return extendedInterval;
+    return anchoredInterval;
 }
 
 void inline determineCheckStack( array<vector<bool>, MAX_SHIFT_ITER>* isSolvedChunk , int it,
@@ -540,9 +563,9 @@ void inline determineCheckStack( array<vector<bool>, MAX_SHIFT_ITER>* isSolvedCh
 void processing( long long* readIndex ,string* readsName ,string* reads ,string *qc ,long long cntReads ,int idx ){
     // [Complete itself]
 
-    ofstream ofstr_Informatives(informativeFileName.c_str());
-    ofstream ofstr_2Informatives(doubInformativeFileName.c_str());
-    ofstream ofstr_unMapped(unMappedFileName.c_str());
+    //ofstream ofstr_Informatives(informativeFileName.c_str());
+    //ofstream ofstr_2Informatives(doubInformativeFileName.c_str());
+    //ofstream ofstr_unMapped(unMappedFileName.c_str());
     //vector<readInfo> informativeReads;
     string currentRead, shiftedRead, currentQC;
     int shiftLen = 0;
@@ -556,11 +579,11 @@ void processing( long long* readIndex ,string* readsName ,string* reads ,string 
     array<vector<mapResult>, MAX_SHIFT_ITER> mapResults;// 0:not searched yet - -1: can't find uniqely - -2: can't fnd with least size
     long cntChunks = 0;
 
-    for(int i = 0 ; i < cntReads ; i++){ // loop on reads of current thread
+    for(long i = 0 ; i < cntReads ; i++){ // loop on reads of current thread
                                          // =============================== {
         // fullyAnchored = false;
         if( !clusters.empty() )
-            clusters.erase( clusters.begin(), clusters.end());
+            clusters.clear();
         for(int j = 0 ; j < shiftIterations ; j++ ){ // loop on shift anchoring
                                                    // =============================== {
             // [[[Initialization: ]]]
@@ -572,29 +595,46 @@ void processing( long long* readIndex ,string* readsName ,string* reads ,string 
             mapResults[j] = vector<mapResult>(cntChunks);
 
             // [[[Where to check: ]]]
-            checkStack.erase( checkStack.begin(), checkStack.end() );
+            checkStack.clear();
             ( j == 0 ? checkStack.push_back( interval(1,cntChunks) ) :
                 determineCheckStack( &isSolvedChunk, j, &mapResults ) );
             if( checkStack.empty() )
                 break;
             // [[[Full Anchoring + Extension: ]]]
+            //cerr<<"read: "<<readsName[i]<<endl;
+            rdcntrMutex.lock();
+            rdcntr++;
+            if(readIndex[i] == 171914)
+                string a = readsName[i];
+            if(rdcntr % 100000 == 0){
+                cerr<<readIndex[i];
+                cerr<<"__________\n"<<++kcntr<<"00 k reads done\n";
+                cerr<<" unMapped:       "<<((double) cnt_unmapped*100/rdcntr)<<"\%\t ("<<cnt_unmapped<<")\n";
+                cerr<<" informative:    "<<((double) cnt_informatives*100/rdcntr)<<"\%\t ("<<cnt_informatives<<")\n";
+                cerr<<" dbl informative:"<<((double) cnt_2informatives*100/rdcntr)<<"\%\t ("<<cnt_2informatives<<")\n";
+            }
+            rdcntrMutex.unlock();
             while( !checkStack.empty() ){
 
                 interval solvedRegion =
-                        anchorAndExtend( currentRead, currentQC, &checkStack, j,
+                        anchorAndExtend( &currentRead, &currentQC, &checkStack, j,
                                          &mapResults, &clusters ,idx );
                 if( solvedRegion.start != 0 )
                     for(int k = solvedRegion.start ; k <= solvedRegion.end ; k++)
                         // only needed for determining checkStack in future anchoring iterations
                         isSolvedChunk[j][k] = true;
             }
+            if(clusters.size() > 0)
+                fullExtension( &currentRead, &clusters, idx );
                                                    // =============================== }
         }
         if( clusters.size() > 1){
             doubInformatives.push_back(informativeReadsData( readIndex[i], readsName[i], reads[i], clusters));
             if( doubInformatives.size() >= WRITEWHEN){
-                write2Informatives(&doubInformatives, &ofstr_2Informatives);
-                doubInformatives.erase( doubInformatives.begin() ,doubInformatives.end() );
+                write2InformativesMutex.lock();
+                write2Informatives(&doubInformatives/*, &ofstr_2Informatives*/);
+                write2InformativesMutex.unlock();
+                doubInformatives.clear();
             }
         }
         if( clusters.size() > 1
@@ -605,28 +645,38 @@ void processing( long long* readIndex ,string* readsName ,string* reads ,string 
             //isInformative
             informativeReads.push_back(informativeReadsData( readIndex[i], readsName[i], reads[i], clusters));
             if( informativeReads.size() >= WRITEWHEN){
-                writeInformatives(&informativeReads, &ofstr_Informatives);
-                informativeReads.erase( informativeReads.begin() ,informativeReads.end() );
+                writeInformativesMutex.lock();
+                writeInformatives(&informativeReads/*, &ofstr_Informatives*/);
+                writeInformativesMutex.unlock();
+                informativeReads.clear();
             }
             //informativeReads
-            //add informative reads to a vector be written into file or for further analyses
+            //add informative reads to a vector to be written into file or for further analyses
             // we can use depth data too
         }else if( clusters.size() == 0 ){
             unMappeds.push_back( unMappedReads(readsName[i],reads[i], qc[i]) );
             if( unMappeds.size() >= WRITEWHEN){
-                writeUnMapped(&unMappeds, &ofstr_unMapped);
-                unMappeds.erase( unMappeds.begin() ,unMappeds.end() );
+                writeUnMapped(&unMappeds/*, &ofstr_unMapped*/);
+                unMappeds.clear();
             }
         }
                                          // =============================== }
     }
+    if( doubInformatives.size() > 0){
+        write2InformativesMutex.lock();
+        write2Informatives(&doubInformatives/*, &ofstr_2Informatives*/);
+        write2InformativesMutex.unlock();
+        doubInformatives.clear();
+    }
     if( informativeReads.size() > 0){
-        writeInformatives(&informativeReads, &ofstr_Informatives);
-        informativeReads.erase( informativeReads.begin() ,informativeReads.end() );
+        writeInformativesMutex.lock();
+        writeInformatives(&informativeReads/*, &ofstr_Informatives*/);
+        writeInformativesMutex.unlock();
+        informativeReads.clear();
     }
     if( unMappeds.size() > 0){
-        writeUnMapped(&unMappeds, &ofstr_unMapped);
-        unMappeds.erase( unMappeds.begin() ,unMappeds.end() );
+        writeUnMapped(&unMappeds/*, &ofstr_unMapped*/);
+        unMappeds.clear();
     }
 }
 
@@ -670,13 +720,13 @@ void mt_ReadAndProcess(ifstream* fin,int* idt){
                     cerr<<"\n  -- Started a new File to Read..\n";
                 }
                 else{
-                    readFileMutex.unlock();
+                    //readFileMutex.unlock();
                     break;
                 }
             }
             //cerr<<"\n thread "<<(*idt)<<" Started to read file";
             if( line.length() == 0 ){
-                readFileMutex.unlock();
+                //readFileMutex.unlock();
                 break;
             }
             if( line[0] == '@' && line.length() > 1 ){
@@ -701,17 +751,20 @@ void mt_ReadAndProcess(ifstream* fin,int* idt){
             totbp += line.length();
             mxLen = max( mxLen, (int)line.length());
             reads[cntReads] = line;
-            readsIndex[cntReads] = ++readCounter;
+            readsIndex[cntReads] = readCounter++;
             getline( *fin, line );
             getline( *fin, line );
             //if( totalReads + cntReads >= 750000 )
             //	cerr << reads[cntReads] << endl;
             qc[cntReads++] = line;
-            if( cntReads >= MAXREADSIZE || totbp > 100000000)
+            if( cntReads >= MAXREADSIZE || totbp > 100000000){
+                //readFileMutex.unlock();
                 break;
+            }
         }
 
         if( cntReads == 0 ){
+            readFileMutex.unlock();
             break;
             cerr<<"\n no more to read";
         }
@@ -799,7 +852,7 @@ int main(int argc, char *argv[]){
     string rvAdr = refPrefix + ".rev.fm";
     string rfInf = refPrefix;
     genomeLength = loadRef( rfInf );
-    cerr<<"\n((("<<genomeLength<<endl;
+    //cerr<<"\n((("<<genomeLength<<endl;
     cerr << "--Ref loading is done!\n";
     /* load index */
     fmIdx.load(fwAdr);
@@ -824,7 +877,7 @@ int main(int argc, char *argv[]){
         cerr<<"\n Wrong number of files... (<1).\n Extited";
         return 0;
     }
-    cerr<<currentFileName;
+    //cerr<<currentFileName<<endl;
     ifstream ifstr(currentFileName.c_str());
 
     int *ids;
@@ -844,7 +897,14 @@ int main(int argc, char *argv[]){
     auto T2 = std::chrono::high_resolution_clock::now();
     auto DD = std::chrono::duration_cast< std::chrono::seconds>(T2 - T1);
     cerr << "\n________________________________\n Total Run Time = " << DD.count() << "s" << endl;
-    cerr<<"\n Successfully Finished.";
+
+    cerr<< "\n________________________________\n "<<" Reads count: "<<rdcntr<<endl;
+    cerr<<" unMapped:       "<<((double) cnt_unmapped*100/rdcntr)<<"\%\t ("<<cnt_unmapped<<")\n";
+    cerr<<" informative:    "<<((double) cnt_informatives*100/rdcntr)<<"\%\t ("<<cnt_informatives<<")\n";
+    cerr<<" dbl informative:"<<((double) cnt_2informatives*100/rdcntr)<<"\%\t ("<<cnt_2informatives<<")\n";
+    cerr<< "\n________________________________\n";
+    cerr<< "\n Successfully Finished.";
+
     delete ids;
     ifstr.close();
     return a.exec();
