@@ -27,7 +27,15 @@ struct solvedFragInfo{
     solvedFragInfo(){}
     solvedFragInfo(long start_c, long long start_p, long end_c, long long end_p, bool rev, int shiftt):
         startChunk(start_c),startPos(start_p),endChunk(end_c),endPos(end_p),isReverse(rev),shift(shiftt){}
+//    bool operator<(const solvedFragInfo &a, const solvedFragInfo &b)
+//    {
+//        return a.startChunk < b.startChunk;
+//    }
 };
+bool operator<(const solvedFragInfo &a, const solvedFragInfo &b)
+{
+    return a.startChunk < b.startChunk;
+}
 
 struct unMappedReads{
     string name;
