@@ -307,7 +307,7 @@ int maxReport[MAXTHREADS];
 int globalBestOne = 0;
 string globalMode = "normal";
 int bestOne[MAXTHREADS];
-double globalNoisePercent =-0.04;
+double globalNoisePercent = -0.04;
 double noisePercent[MAXTHREADS];
 int globalMaxDiffMismatch = 1;
 int maxDiffMismatch[MAXTHREADS];
@@ -715,7 +715,6 @@ bool processResult( bwtNode& curMap, int tIdx, int preLeftToRight ){
     }
     return  false;
 }
-
 
 
 bool buttumUpMapping( bwtNode curMap, vector<pInterval>& path, int idxPath, int preLeftToRight, int tIdx ){
