@@ -25,6 +25,17 @@
 //> Global Vars:                   |
 // ================================|
 //                                 |
+
+vector<informativeChunk> informativeChunks;
+vector<feasibleEvents> right;
+vector<feasibleEvents> left;
+
+//double mappingTime = 0;
+//double extensionTime = 0;
+clock_t mappingTime = 0;
+clock_t extensionTime = 0;
+
+
 int characterPerRow;
 long long rdcntr = 0;
 long long kcntr = 0;
@@ -35,6 +46,7 @@ long long cnt_unmapped = 0;
 std::mutex rdcntrMutex;
 std::mutex readFileMutex;
 std::mutex getGenomeHDDMutex;
+std::mutex informativeChunksMutex;
 std::mutex writeInformativesMutex;
 std::mutex write2InformativesMutex;
 std::mutex writeUnMappedMutex;
@@ -43,6 +55,8 @@ long long readCounter = 0;
 long long genomeLength = 0;
 readMappingInfo globalRMI[MAXTHREADS];
 
+ofstream ofstre_rightEvents(rightEventsFileName.c_str());
+ofstream ofstre_leftEvents(leftEventsFileName.c_str());
 ofstream ofstr_Informatives(informativeFileName.c_str());
 ofstream ofstr_2Informatives(doubInformativeFileName.c_str());
 ofstream ofstr_unMapped(unMappedFileName.c_str());
@@ -56,48 +70,29 @@ int shiftSteps = chunkSize / shiftIterations ;
 // ================================|
 //                                 |
 
-inline string revComplemACGT(string readSegment){
-    // [Completed]
-    for (char& c : readSegment) {
-        switch(c) {
-        case 'a':
-            c = 't';
-            break;
-        case 'g':
-            c = 'c';
-            break;
-        case 'c':
-            c = 'g';
-            break;
-        case 't':
-            c = 'a';
-            break;
-        case 'A':
-            c = 'T';
-            break;
-        case 'G':
-            c = 'C';
-            break;
-        case 'C':
-            c = 'G';
-            break;
-        case 'T':
-            c = 'A';
-            break;
-        default:
-            ;
-        }
-    }
-    reverse( readSegment.begin(), readSegment.end() );
-    //readSegment = string ( readSegment.rbegin(), readSegment.rend() );
-    return readSegment;
-}
+
+// ================================|
+//  Detection part                 |
+
+
+
+
+//  Detection part                 |
+// ================================'
+
+
+
+
+
+
 mapResult uniqueMap( string readChunk , string quality, int idx ){
     // [Completed]
     // Func aim:
     // given a read chunk, it's quality an thread index
     // return the unique mapping result for this chunk
 
+    //time_t timer = time(NULL);
+    clock_t timer = clock();
     globalRMI[idx].read = readChunk;
     globalRMI[idx].qual = quality;
     // globalRMI[idx].readName = "?";
@@ -108,20 +103,33 @@ mapResult uniqueMap( string readChunk , string quality, int idx ){
     string rev = reverseComplement( readChunk );
     if( mps.size() > 1 ){
         cerr<<"not a unique search";
+        mappingTime += clock() - timer;
         return mapResult();
     }
     mappingInfo ix = mps[0];
     if( ix.flag != 4 ){
         ix.cigar = getCigar( ix.refPos, ( ix.flag == 0 ) ? mos : rev, ix.acceptedValue, idx  );
         ix.refPos = ix.refPos - ix.acceptedValue + ix.cigar.second;
-    }else
+    }else{
+        mappingTime += clock() - timer;
         return mapResult( -1 , false  );
+    }
+    mappingTime += clock() - timer;
     return mapResult(ix.refPos,( ix.flag == 0 ? false : true ));
 
 }
 
-string getGenome(){
+string getGenome(long long loci, long long length){
     // [not yet]
+    if(loci + length > Ref.sz ){
+        cerr<<"\n=======\n=======\n=======\nexceeds genome length!\n=======\n=======\n=======\n";
+        return 0;
+    }
+    string genomeString;
+    for(long long i = 0 ; i < length ; i++ ){
+        genomeString += Ref.charAt(loci+i);
+    }
+    return genomeString;
 }
 
 int findCharacterPerRow(string genomeName) {
@@ -130,7 +138,7 @@ int findCharacterPerRow(string genomeName) {
     string line;
     getline(ifstr, line);
     getline(ifstr, line);
-    characterPerRow = (int)line.size();
+    characterPerRow = (long)line.size();
     ifstr.close();
     return characterPerRow;
 }
@@ -271,7 +279,8 @@ int ifAlignable( long long startLoci, string readSegment, bool isReverse, int *a
     if(startLoci - indelShiftLocal*readSegment.size() < 0 || startLoci + indelShiftLocal*readSegment.size()+chunkSize  > genomeLength-1 )
         return 0;
 
-    string genomeString = getGenomeHDD(startLoci - indelShiftLocal*readSegment.size(), chunkSize + 2*readSegment.size()*indelShiftLocal );
+    //string genomeString = getGenomeHDD(startLoci - indelShiftLocal*readSegment.size(), chunkSize + 2*readSegment.size()*indelShiftLocal );
+    string genomeString = getGenome(startLoci - indelShiftLocal*readSegment.size(), chunkSize + 2*readSegment.size()*indelShiftLocal );
     int readlen = readSegment.size();
     string seqConstantB = "";
 
@@ -313,7 +322,7 @@ long extendManager(long from, long until, string* read, solvedFragInfo* anchorEx
         for( int i = from; i < (until-1) ; i++ )
             fragsOfRead.push_back( read->substr(  (i*chunkSize)  , chunkSize ));
 
-        if( until == (int) ((read->size() + chunkSize - 20) / chunkSize) )
+        if( until == (long) ((read->size() + chunkSize - 20) / chunkSize) )
             fragsOfRead.push_back( read->substr( (until-1)*chunkSize /*, readLen-((readLen-1)/chunkSize)*chunkSize)*/ ));
         else
             fragsOfRead.push_back( read->substr( (until-1)*chunkSize , chunkSize ));
@@ -347,7 +356,11 @@ long extendManager(long from, long until, string* read, solvedFragInfo* anchorEx
     }
 }
 
-void fullExtension( string* read, vector<solvedFragInfo>* clusters, int idx ){
+void allFragsExtension( string* read, vector<solvedFragInfo>* clusters, int idx ){
+//    time_t timer = time(NULL);
+    clock_t timer = clock();
+
+    mappingTime += clock() - timer;
     int numFrags =  ( read->size() + chunkSize - 20 ) / chunkSize;
     sort( clusters->begin(), clusters->end() );
 
@@ -365,7 +378,7 @@ void fullExtension( string* read, vector<solvedFragInfo>* clusters, int idx ){
     if( clusters->back().endChunk < numFrags ){
         extendManager( clusters->back().endChunk ,numFrags ,read ,&(clusters->back()) );
     }
-
+    extensionTime += clock() - timer;
 }
 
 interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack ,int it
@@ -382,7 +395,7 @@ interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack 
     interval toCheck = checkStack->back();
     checkStack->pop_back();
 
-    bool isFinalChunk = ( ((int)(read->length() + chunkSize - 20) / chunkSize) == toCheck.end ? true : false );
+    bool isFinalChunk = ( ((long)(read->length() + chunkSize - 20) / chunkSize) == toCheck.end ? true : false );
 
     // =====================
     // Check First and Last:
@@ -416,7 +429,7 @@ interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack 
     interval anchoredInterval;
     //interval extendedInterval;
     bool isAnchored = false;
-    int half = (int) ceil((double) (toCheck.end-toCheck.start)/2);
+    int half = (long) ceil((double) (toCheck.end-toCheck.start)/2);
 //    if ((toCheck.end-toCheck.start) %2 != 0) {
 //        half--;
 //    }
@@ -560,6 +573,227 @@ void inline determineCheckStack( array<vector<bool>, MAX_SHIFT_ITER>* isSolvedCh
     // nothing yet
 }
 
+void buildUpEvents(){
+
+    feasibleEvents tempRight;
+    tempRight.informatives.push_back( informativeChunk("fake",0,0,0,0,0) );
+    feasibleEvents tempLeft;
+    tempLeft.informatives.push_back( informativeChunk("fake",0,0,0,0,0) );
+
+    int depcntr = 0;
+
+    sort( informativeChunks.begin(), informativeChunks.begin() );
+
+    for(vector<informativeChunk>::iterator it = informativeChunks->begin() ; it != informativeChunks->end(); ++it){
+        if(it->bpIsRight){
+            if( tempRight.informatives.back().loci + chunkSize >= it->loci ){
+                depcntr = 0;
+                tempRight.informatives.push_back( informativeChunk(*it) );
+                for(int k = tempRight.informatives.size()-1 ; k >= 0 ; k-- )
+                    if( tempRight.informatives[k].loci+chunkSize >= it->loci )
+                        depcntr++;
+                    else
+                        break;
+                if( depcntr > tempRight.maxDepth )
+                    tempRight.maxDepth = depcntr;
+
+            }else{
+                //tempRight.informatives.erase( tempRight.informatives.begin() );
+                tempRight.start = tempRight.informatives[0].loci;
+                tempRight.end = tempRight.informatives.front().loci+chunkSize;
+                right.push_back(tempRight);
+                tempRight.informatives.clear();
+                tempRight.informatives.push_back( informativeChunk(*it) );
+                tempRight.maxDepth = 1 ;
+            }
+        }
+        else{
+            if( tempLeft.informatives.back().loci + chunkSize >= it->loci ){
+                depcntr = 0;
+                tempLeft.informatives.push_back( informativeChunk(*it) );
+                for(int k = tempLeft.informatives.size()-1 ; k >= 0 ; k-- )
+                    if( tempLeft.informatives[k].loci+chunkSize >= it->loci )
+                        depcntr++;
+                    else
+                        break;
+                if( depcntr > tempLeft.maxDepth )
+                    tempLeft.maxDepth = depcntr;
+
+            }else{
+                //tempLeft.informatives.erase( tempLeft.informatives.begin() );
+                tempLeft.start = tempLeft.informatives[0].loci;
+                tempLeft.end = tempLeft.informatives.front().loci+chunkSize;
+                left.push_back(tempLeft);
+                tempLeft.informatives.clear();
+                tempLeft.informatives.push_back( informativeChunk(*it) );
+                tempLeft.maxDepth = 1 ;
+            }
+        }
+    }
+
+    right.front().informatives.erase( right.front().informatives.begin() );
+    left.front( ).informatives.erase( left.front( ).informatives.begin() );
+    informativeChunks.clear();
+}
+void buildConnections(){
+
+    for(vector<feasibleEvents>::iterator it = right.begin() ;  it != right.end(); ++it){
+        sort(it->informatives.begin(), it->informatives.end(), compConnected);
+        int index = 0 ;
+        for( long long i = 0 ; i < right.size(); i++ ){
+            while( ! it->informatives[ index ].related_bpIsRight )
+                if(++index >= it->informatives.size() )
+                    break;
+            if(index >= it->informatives.size() )
+                break;
+
+            if( it->informatives[ index ].related_loci > right[i].start
+                    &&
+                    it->informatives[ index ].related_loci < right[i].end ){
+                it->connectedEvents.push_back( connectedEvent(i,true,1) );
+                index++;
+                while( ! it->informatives[ index ].related_bpIsRight )
+                    if(++index >= it->informatives.size() )
+                        break;
+                if(index >= it->informatives.size() )
+                    break;
+                while( it->informatives[ index ].related_loci > right[i].start
+                        &&
+                        it->informatives[ index ].related_loci < right[i].end ){
+                    it->connectedEvents.back().weight++;
+                    index++;
+                    while( ! it->informatives[ index ].related_bpIsRight )
+                        if(++index >= it->informatives.size() )
+                            break;
+                    if(index >= it->informatives.size() )
+                        break;
+                }
+                if(index >= it->informatives.size() )
+                    break;
+
+            }
+        }
+        index = 0 ;
+        for( long long i = 0 ; i < left.size(); i++ ){
+            while( it->informatives[ index ].related_bpIsRight )
+                if(++index >= it->informatives.size() )
+                    break;
+            if(index >= it->informatives.size() )
+                break;
+            if( it->informatives[ index ].related_loci > left[i].start
+                    &&
+                    it->informatives[ index ].related_loci < left[i].end ){
+                it->connectedEvents.push_back( connectedEvent(i,false,1) );
+                index++;
+                while( it->informatives[ index ].related_bpIsRight )
+                    if(++index >= it->informatives.size() )
+                        break;
+                if(index >= it->informatives.size() )
+                    break;
+                while( it->informatives[ index ].related_loci > left[i].start
+                        &&
+                        it->informatives[ index ].related_loci < left[i].end ){
+                    it->connectedEvents.back().weight++;
+                    index++;
+                    while( it->informatives[ index ].related_bpIsRight )
+                        if(++index >= it->informatives.size() )
+                            break;
+                    if(index >= it->informatives.size() )
+                        break;
+                }
+                if(index >= it->informatives.size() )
+                    break;
+            }
+        }
+    }
+    for(vector<feasibleEvents>::iterator it = left.begin() ;  it != left.end(); ++it){
+        sort(it->informatives.begin(), it->informatives.end(), compConnected);
+        int index = 0 ;
+        for( long long i = 0 ; i < right.size(); i++ ){
+            while( ! it->informatives[ index ].related_bpIsRight )
+                index++;
+            if( it->informatives[ index ].related_loci > right[i].start
+                    &&
+                    it->informatives[ index ].related_loci < right[i].end ){
+                it->connectedEvents.push_back( connectedEvent(i,true,1) );
+                index++;
+                while( ! it->informatives[ index ].related_bpIsRight )
+                    index++;
+                while( it->informatives[ index ].related_loci > right[i].start
+                        &&
+                        it->informatives[ index ].related_loci < right[i].end ){
+                    it->connectedEvents.back().weight++;
+                    index++;
+                    while( ! it->informatives[ index ].related_bpIsRight )
+                        index++;
+                }
+            }
+        }
+        index = 0 ;
+        for( long long i = 0 ; i < left.size(); i++ ){
+            while( it->informatives[ index ].related_bpIsRight )
+                index++;
+            if( it->informatives[ index ].related_loci > left[i].start
+                    &&
+                    it->informatives[ index ].related_loci < left[i].end ){
+                it->connectedEvents.push_back( connectedEvent(i,false,1) );
+                index++;
+                while( it->informatives[ index ].related_bpIsRight )
+                    index++;
+                while( it->informatives[ index ].related_loci > left[i].start
+                        &&
+                        it->informatives[ index ].related_loci < left[i].end ){
+                    it->connectedEvents.back().weight++;
+                    index++;
+                    while( it->informatives[ index ].related_bpIsRight )
+                        index++;
+                }
+            }
+        }
+    }
+
+}
+
+writeEvents(){
+    ofstre_rightEvents;
+    for(vector<feasibleEvents>::iterator it = right.begin() ;  it != right.end(); ++it){
+        ofstre_rightEvents<<it->start<<"\t"<<it->end<<"\t"<<it->maxDepth<<"\t|";
+        for(int i = 0 ; i < min(it->connectedEvents.size(),3) ; i++ ){
+            ofstre_rightEvents<<"\t"<<it->connectedEvents[i].index<<"\t"<<it->connectedEvents[i].weight<<"\t"<<(it->connectedEvents[i].isRightBP?"\-\>":"\<\-");
+        }
+    }
+
+
+
+    struct informativeChunk{
+        string readName = "";
+
+        uint32_t loci = 0;
+        bool bpIsRight = 0;
+
+        bool isRelated = 0;
+
+        uint32_t related_loci = 0;
+        bool related_bpIsRight = 0;
+
+
+    struct connectedEvent{
+        long long index = 0;
+        bool isRightBP = false;
+        int weight = 0;
+        connectedEvent(){}
+        connectedEvent( long long indexx, bool isRightBPp, int weightt ):
+        index(indexx), isRightBP(isRightBPp), weight(weightt){}
+
+    struct feasibleEvents{
+        vector<informativeChunk> informatives;
+        int maxDepth = 0;
+        uint32_t start = 0;
+        uint32_t end = 0;
+        vector<connectedEvent> connectedEvents;
+
+}
+
 void processing( long long* readIndex ,string* readsName ,string* reads ,string *qc ,long long cntReads ,int idx ){
     // [Complete itself]
 
@@ -625,30 +859,47 @@ void processing( long long* readIndex ,string* readsName ,string* reads ,string 
                         isSolvedChunk[j][k] = true;
             }
             if(clusters.size() > 0)
-                fullExtension( &currentRead, &clusters, idx );
+                allFragsExtension( &currentRead, &clusters, idx );
                                                    // =============================== }
         }
-        if( clusters.size() > 1){
-            doubInformatives.push_back(informativeReadsData( readIndex[i], readsName[i], reads[i], clusters));
-            if( doubInformatives.size() >= WRITEWHEN){
-                write2InformativesMutex.lock();
-                write2Informatives(&doubInformatives/*, &ofstr_2Informatives*/);
-                write2InformativesMutex.unlock();
-                doubInformatives.clear();
-            }
-        }
+//        if( clusters.size() > 1){
+//            doubInformatives.push_back(informativeReadsData( readIndex[i], readsName[i], reads[i], clusters));
+//            if( doubInformatives.size() >= WRITEWHEN){
+//                write2InformativesMutex.lock();
+//                write2Informatives(&doubInformatives/*, &ofstr_2Informatives*/);
+//                write2InformativesMutex.unlock();
+//                doubInformatives.clear();
+//            }
+//        }
+        long terminal = ( (long) (reads[i].size() + chunkSize - 20) / chunkSize);
         if( clusters.size() > 1
                 ||
                 (clusters.size() == 1
-                 && (clusters[0].startChunk != 1
-                     || clusters[0].endChunk != ( (int) (reads[i].size() + chunkSize - 20) / chunkSize) ) ) ){
+                 && !(clusters[0].startChunk == 1
+                     && clusters[0].endChunk == terminal ) ) ){
             //isInformative
-            informativeReads.push_back(informativeReadsData( readIndex[i], readsName[i], reads[i], clusters));
-            if( informativeReads.size() >= WRITEWHEN){
-                writeInformativesMutex.lock();
-                writeInformatives(&informativeReads/*, &ofstr_Informatives*/);
-                writeInformativesMutex.unlock();
-                informativeReads.clear();
+            if(runPhase2){
+                informativeChunksMutex.lock();
+                for(int t=0 ; t < clusters.size() ; t++ ){
+                    if(clusters[t].startChunk != 1)
+                        informativeChunks.push_back( informativeChunk(readName[i], clusters[t].startPos, clusters[t].isReverse,
+                                                                      (t > 0), (t > 0 ?clusters[t-1].endPos:0), (t>0?!clusters[t-1].isReverse:false)  ) );
+                    if(clusters[t].endChunk != terminal )
+                        informativeChunks.push_back( informativeChunk(readName[i], clusters[t].startPos, !clusters[t].isReverse,
+                                                                      (t < clusters.size()-1 ), (t < clusters.size()-1 ?clusters[t+1].startPos:0),
+                                                                      (t<clusters.size()-1?clusters[t+1].isReverse:false)  ) );
+                }
+                informativeChunksMutex.unlock();
+                if(informativeChunks.size() % 200 = 0)
+                    cerr<<"\n is sized more than: "<<informativeChunks.size();
+            }else{
+                informativeReads.push_back(informativeReadsData( readIndex[i], readsName[i], reads[i], clusters));
+                if( informativeReads.size() >= WRITEWHEN){
+                    writeInformativesMutex.lock();
+                    writeInformatives(&informativeReads/*, &ofstr_Informatives*/);
+                    writeInformativesMutex.unlock();
+                    informativeReads.clear();
+                }
             }
             //informativeReads
             //add informative reads to a vector to be written into file or for further analyses
@@ -662,13 +913,13 @@ void processing( long long* readIndex ,string* readsName ,string* reads ,string 
         }
                                          // =============================== }
     }
-    if( doubInformatives.size() > 0){
-        write2InformativesMutex.lock();
-        write2Informatives(&doubInformatives/*, &ofstr_2Informatives*/);
-        write2InformativesMutex.unlock();
-        doubInformatives.clear();
-    }
-    if( informativeReads.size() > 0){
+//    if( doubInformatives.size() > 0){
+//        write2InformativesMutex.lock();
+//        write2Informatives(&doubInformatives/*, &ofstr_2Informatives*/);
+//        write2InformativesMutex.unlock();
+//        doubInformatives.clear();
+//    }
+    if( !runPhase2 && informativeReads.size() > 0){
         writeInformativesMutex.lock();
         writeInformatives(&informativeReads/*, &ofstr_Informatives*/);
         writeInformativesMutex.unlock();
@@ -749,7 +1000,7 @@ void mt_ReadAndProcess(ifstream* fin,int* idt){
                     line[i] = 'a';
             }
             totbp += line.length();
-            mxLen = max( mxLen, (int)line.length());
+            mxLen = max( mxLen, (long)line.length());
             reads[cntReads] = line;
             readsIndex[cntReads] = readCounter++;
             getline( *fin, line );
@@ -802,10 +1053,14 @@ void mt_ReadAndProcess(ifstream* fin,int* idt){
 }
 
 int main(int argc, char *argv[]){
+
     QCoreApplication a(argc, argv);
     chdir(MAINADDRESS);
     // ===========================================================================================
     // SureMap main:
+    globalMode = "normal";
+    globalMode = "very-sensitive";
+    //globalMode = "fast";
     for( int i = 0 ; i < MAXTHREADS ; i++ ){
         minVal[i] = 1000;
         mxFailed[i] = 1000;
@@ -817,11 +1072,16 @@ int main(int argc, char *argv[]){
         globalRMI[i].maxDiffEdit = globalMaxDiffEdit;
         globalRMI[i].gap = globalGap;
         globalRMI[i].noisePercent = globalNoisePercent;
+
     }
     if( globalMode == "fast" )
         Mode = 4, mc =  4;
     else if( globalMode == "normal" )
         Mode = 3, mc = 10;
+    else if( globalMode == "sensitive" )
+        Mode = 3, mc = 10;
+    else
+        Mode = 1000, mc = 1000;
 
     std::srand ( unsigned ( std::time(0) ) );
     vector< unsigned short > test;
@@ -852,6 +1112,8 @@ int main(int argc, char *argv[]){
     string rvAdr = refPrefix + ".rev.fm";
     string rfInf = refPrefix;
     genomeLength = loadRef( rfInf );
+    cerr<<"requested genome string:\n"<<getGenome(199271,200)<<endl;
+
     //cerr<<"\n((("<<genomeLength<<endl;
     cerr << "--Ref loading is done!\n";
     /* load index */
@@ -897,15 +1159,23 @@ int main(int argc, char *argv[]){
     auto T2 = std::chrono::high_resolution_clock::now();
     auto DD = std::chrono::duration_cast< std::chrono::seconds>(T2 - T1);
     cerr << "\n________________________________\n Total Run Time = " << DD.count() << "s" << endl;
-
+    cout<<"\n Mapping Time = "<< (double)mappingTime/CLOCKS_PER_SEC <<endl;
+    cout<<"\n Extension Time = "<< (double)extensionTime/CLOCKS_PER_SEC <<endl;
     cerr<< "\n________________________________\n "<<" Reads count: "<<rdcntr<<endl;
     cerr<<" unMapped:       "<<((double) cnt_unmapped*100/rdcntr)<<"\%\t ("<<cnt_unmapped<<")\n";
     cerr<<" informative:    "<<((double) cnt_informatives*100/rdcntr)<<"\%\t ("<<cnt_informatives<<")\n";
     cerr<<" dbl informative:"<<((double) cnt_2informatives*100/rdcntr)<<"\%\t ("<<cnt_2informatives<<")\n";
     cerr<< "\n________________________________\n";
-    cerr<< "\n Successfully Finished.";
-
+    cerr<< "\n Phase1 Successfully Finished.";
+    cerr<< "\n________________________________\n";
+    if(runPhase2){
+        buildUpEvents();
+        //filterEvents();
+        //buildEventGraph();
+        writeEvents;
+    }
     delete ids;
     ifstr.close();
     return a.exec();
 }
+

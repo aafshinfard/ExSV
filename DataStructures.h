@@ -1,6 +1,56 @@
 #ifndef DATASTRUCTURES_H
 #define DATASTRUCTURES_H
+#include <cstdint>
 
+struct informativeChunk{
+    string readName = "";
+
+    uint32_t loci = 0;
+    bool bpIsRight = 0;
+
+    bool isRelated = 0;
+
+    uint32_t related_loci = 0;
+    bool related_bpIsRight = 0;
+
+    informativeChunk(){}
+    informativeChunk( informativeChunk a ):
+    readName(a.readName), loci(a.loci), bpIsRight(a.bpIsRight), isRelated(a.isRelated), related_loci(a.related_loci), related_bpIsRight(a.related_bpIsRight){}
+    informativeChunk( string readNamee, uint32_t locii, bool bpIsRightt, bool isRelatedd, uint32_t related_locii, bool related_bpIsRightt):
+    readName(readNamee), loci(locii), bpIsRight(bpIsRightt), isRelated(isRelatedd), related_loci(related_locii), related_bpIsRight(related_bpIsRightt){}
+    //    bool operator<(const informativeChunk &a, const informativeChunk &b)
+    //    {
+    //        return a.loci < b.loci;
+    //    }
+};
+bool operator<(const informativeChunk &a, const informativeChunk &b)
+{
+    return a.loci < b.loci;
+}
+bool compConnected(const informativeChunk &a, const informativeChunk &b){
+    return a.related_loci < a.related_loci;
+}
+
+struct connectedEvent{
+    long long index = 0;
+    bool isRightBP = false;
+    int weight = 0;
+    connectedEvent(){}
+    connectedEvent( long long indexx, bool isRightBPp, int weightt ):
+    index(indexx), isRightBP(isRightBPp), weight(weightt){}
+};
+bool operator<(const connectedEvent &a, const connectedEvent &b)
+{
+    return a.weight < b.weight;
+}
+
+struct feasibleEvents{
+    vector<informativeChunk> informatives;
+    int maxDepth = 0;
+    uint32_t start = 0;
+    uint32_t end = 0;
+    vector<connectedEvent> connectedEvents;
+};
 
 struct mapResult{
     long long position = 0; // 0:not searched yet - -1: can't find uniqely - -2: can't fnd with least size
@@ -13,10 +63,10 @@ struct mapResult{
 
 struct solvedFragInfo{
 
-    long startChunk;
+    long startChunk = 0;
     long long startPos = 0;
 
-    long endChunk;
+    long endChunk = 0;
     long long endPos = 0;
 
     bool isReverse = false;
@@ -38,18 +88,19 @@ bool operator<(const solvedFragInfo &a, const solvedFragInfo &b)
 }
 
 struct unMappedReads{
-    string name;
-    string read;
-    string quality;
+    string name = "";
+    string read = "";
+    string quality = "";
     unMappedReads(){}
     unMappedReads(string namee, string readd, string qualityy ):
         name(namee),read(readd),quality(qualityy){}
 };
 
+
 struct informativeReadsData{
-    long long index;
-    string readName;
-    string readSeq;
+    long long index = 0;
+    string readName = "";
+    string readSeq = "";
     vector<solvedFragInfo> clusters;
     informativeReadsData(){}
     informativeReadsData( long long indexx, string readname, string readseq, vector<solvedFragInfo> clusterss):
@@ -60,18 +111,18 @@ struct informativeReadsData{
 };
 
 struct interval{
-    long start;
-    long end;
+    long start = 0;
+    long end = 0;
     interval(){}
     interval(long p, long q):start(p),end(q){}
 
 };
 
 struct singleBowtied{
-    long long readIndex;
-    int fragNum;
-    long long snap;
-    int flag;
+    long long readIndex = 0;
+    int fragNum = 0;
+    long long snap = 0;
+    int flag = 0;
     singleBowtied(){}
     singleBowtied(long long rI, int fN, long long s, int f):readIndex(rI),fragNum(fN),snap(s),flag(f){}
 };
