@@ -14,7 +14,7 @@ struct informativeChunk{
     bool related_bpIsRight = 0;
 
     informativeChunk(){}
-    informativeChunk( informativeChunk a ):
+    informativeChunk( const informativeChunk &a ):
     readName(a.readName), loci(a.loci), bpIsRight(a.bpIsRight), isRelated(a.isRelated), related_loci(a.related_loci), related_bpIsRight(a.related_bpIsRight){}
     informativeChunk( string readNamee, uint32_t locii, bool bpIsRightt, bool isRelatedd, uint32_t related_locii, bool related_bpIsRightt):
     readName(readNamee), loci(locii), bpIsRight(bpIsRightt), isRelated(isRelatedd), related_loci(related_locii), related_bpIsRight(related_bpIsRightt){}

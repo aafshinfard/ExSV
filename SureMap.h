@@ -302,7 +302,7 @@ mutex mu;
 /* runing options */
 int mc = 10;
 int core = 1;
-int globalMaxReport = 1;
+int globalMaxReport = 2;
 int maxReport[MAXTHREADS];
 int globalBestOne = 0;
 string globalMode = "normal";
@@ -315,7 +315,7 @@ int globalMaxDiffEdit = 1;
 int maxDiffEdit[MAXTHREADS];
 int globalGap = 0;
 int gap[MAXTHREADS];
-int globalUniqeOption = 0;
+int globalUniqeOption = 1;
 int globalLongReadNoice = 30;
 int uniqeOption[MAXTHREADS];
 string outputAdr = "report.sam";
