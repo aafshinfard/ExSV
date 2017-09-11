@@ -27,6 +27,9 @@ bool operator<(const informativeChunk &a, const informativeChunk &b)
 {
     return a.loci < b.loci;
 }
+bool compLoci(const informativeChunk &a, const informativeChunk &b){
+    return a.loci < a.loci;
+}
 bool compConnected(const informativeChunk &a, const informativeChunk &b){
     return a.related_loci < a.related_loci;
 }

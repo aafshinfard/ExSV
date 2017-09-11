@@ -39,7 +39,7 @@ using namespace std;
 #define seed2  1000019
 #define seed3 100000007
 #define MAXTHREADS 40
-#define MAXREADSIZE 10000
+#define MAXREADSIZE 5000
 #define MAX_SHIFT_ITER 5
 #define WRITEWHEN 100
 #define MAINADDRESS "/home/ameer/ExactSV/"
@@ -51,8 +51,8 @@ int numberOfThreads = 8;
 // ====
 int chunkSize = 25;
 // ==== Files:
-string readsFileName = "minreads"; //string readsFileName = "readsv2_1"; //string readsFileName = "reads_t1";    //string readName = "reads_k12.fq";
-int readsFileCount = 1;
+string readsFileName = "readsv2"; //string readsFileName = "reads_t1";    //string readName = "reads_k12.fq";
+int readsFileCount = 2;
 string genomeName = "Chr19.fa"; //string genomeName = "E_coli_K12_DH10B.fa";    //string genomeName = "chr19.fa";
 //string indexName = "Chr19"; //string indexName = "E_coli_K12_DH10B";        //string indexName = "chr19";
 string outputDir = "/home/ameer/ExactSV/SV_out/";
@@ -82,6 +82,7 @@ int shiftIterations = 1;        // max = MAX_SHIFT_ITER
 bool logTxt = false;
 bool pairedEndedReads = false;  // if true, then reads must be in two files "readName"_1.fq and "readName"_2.fq
 bool runPhase2 = true;
+bool writeInfo = true;
 
 long long cntCOM = 0, cntBG=0;
 
