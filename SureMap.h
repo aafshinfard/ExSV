@@ -1433,7 +1433,7 @@ bool cmpBwt( const bwtNode& a, const bwtNode& b ){
     return a.acceptedValue < b.acceptedValue;
 }
 
-vector< mappingInfo > getAllMapping( int idx, readMappingInfo& rm ){
+inline vector< mappingInfo > getAllMapping( int idx, readMappingInfo& rm ){
     /*readMappingInfo rm( reads[ii], qc[ii], readsName[ii], globalMaxReport, globalBestOne, globalMaxDiffMismatch, globalMaxDiffEdit, globalGap,
         globalUniqeOption, globalNoisePercent );
     */

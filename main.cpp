@@ -21,10 +21,15 @@
 #include "SureMap.h"
 #include "LocalAligner.h"
 
+
 // ================================|
 //> Global Vars:                   |
 // ================================|
 //                                 |
+
+//> Binary Genomes
+vector<bool> bGRight;
+vector<bool> bGLeft;
 
 vector<informativeChunk> informativeChunks;
 vector<feasibleEvents> rightE;
@@ -44,6 +49,7 @@ int fileCounter = 1; // to remember current active file
 long long cnt_2informatives = 0;
 long long cnt_informatives = 0;
 long long cnt_unmapped = 0;
+
 std::mutex rdcntrMutex;
 std::mutex readFileMutex;
 std::mutex getGenomeHDDMutex;
@@ -51,6 +57,9 @@ std::mutex informativeChunksMutex;
 std::mutex writeInformativesMutex;
 std::mutex write2InformativesMutex;
 std::mutex writeUnMappedMutex;
+std::mutex bGRChangeMutex;
+std::mutex bGLChangeMutex;
+
 long long totalReads = 0;
 long long readCounter = 0;
 long long genomeLength = 0;
@@ -65,6 +74,9 @@ ofstream ofstr_unMapped(unMappedFileName.c_str());
 int shiftSteps = chunkSize / shiftIterations ;
 //                                 |
 // ================================'
+
+
+
 
 // ================================|
 //> Functions:                     |
@@ -83,10 +95,29 @@ int shiftSteps = chunkSize / shiftIterations ;
 
 
 
+inline void changeBinGenome(long long start , long long end, bool isToRight){
+
+    if(start > end){
+        long long temp = start;
+        start = end;
+        end = temp;
+    }
+    //BGRchanges += abs(end - start)+1;
+    if( isToRight ){
+        bGRChangeMutex.lock();
+        for(long long i = start; i < end+1 ; i++)
+            bGRight[i] = true;
+        bGRChangeMutex.unlock();
+    }else{
+        bGLChangeMutex.lock();
+        for(long long i = start; i < end+1 ; i++)
+            bGLeft[i] = true;
+        bGLChangeMutex.unlock();
+    }
+}
 
 
-
-mapResult uniqueMap( string readChunk , string quality, int idx ){
+inline mapResult uniqueMap( string readChunk , string quality, int idx ){
     // [Completed]
     // Func aim:
     // given a read chunk, it's quality an thread index
@@ -120,10 +151,10 @@ mapResult uniqueMap( string readChunk , string quality, int idx ){
 
 }
 
-string getGenome(long long loci, long long length){
+inline string getGenome(long long loci, long long length){
     // [not yet]
     if(loci + length > Ref.sz ){
-        cerr<<"\n=======\n=======\n=======\nexceeds genome length!\n=======\n=======\n=======\n";
+        cerr<<"\n=======\n=======\n=======\n exceeds genome length!\n=======\n=======\n=======\n";
         return 0;
     }
     string genomeString;
@@ -259,7 +290,7 @@ void writeUnMapped( vector<unMappedReads>* unMappeds/*, ofstream *ofstr1*/ ){
 }
 
 
-int ifAlignable( long long startLoci, string readSegment, bool isReverse, int *alignShiftPos
+inline int ifAlignable( long long startLoci, string readSegment, bool isReverse, int *alignShiftPos
                   /*,bool isToRight, jumpsCount, (counter==0 && onlyBG ? true:false)*/ ){
     if( isReverse )
         readSegment = revComplemACGT( readSegment );
@@ -347,10 +378,26 @@ long extendManager(long from, long until, string* read, solvedFragInfo* anchorEx
     // ========================
     // data changes and return:
     if(from > until){
+        if(BGChanges){
+            changeBinGenome(anchorExtendResult->startPos + (isReverse ? 0 : 2*chunkSize ),
+                            anchorExtendResult->startPos-(isReverse?-1:+1)*(counter*chunkSize+alignShiftPos) + (isReverse ? -2 : 0 )*chunkSize,
+                            true);
+            changeBinGenome(anchorExtendResult->startPos + (isReverse ? -1 : +1 )*chunkSize,
+                            anchorExtendResult->startPos-(isReverse?-1:+1)*(counter*chunkSize+alignShiftPos) + ( -1 )*chunkSize,
+                            false);
+        }
         anchorExtendResult->startChunk = from - counter;
         anchorExtendResult->startPos -= (isReverse?-1:+1)*(counter*chunkSize+alignShiftPos);
         return anchorExtendResult->startChunk;
     }else{
+        if(BGChanges){
+            changeBinGenome(anchorExtendResult->endPos + (isReverse ? 0 : 2*chunkSize ),
+                            anchorExtendResult->endPos + (isReverse?-1:+1)*(counter*chunkSize+alignShiftPos) + (isReverse ? -2 : 0 )*chunkSize,
+                            true);
+            changeBinGenome(anchorExtendResult->endPos + (isReverse ? -1 : +1 )*chunkSize,
+                            anchorExtendResult->endPos + (isReverse?-1:+1)*(counter*chunkSize+alignShiftPos) + ( -1 )*chunkSize,
+                            false);
+        }
         anchorExtendResult->endChunk = from + counter;
         anchorExtendResult->endPos += (isReverse?-1:+1)*(counter*chunkSize+alignShiftPos);
         return anchorExtendResult->endChunk;
@@ -391,6 +438,9 @@ interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack 
     // Given [a single read], its [quality], its [incomplete mapping records] for different shifting
     // and [asked Intervals] try to anchor and exend exactly for one cluster and push new intervals to checkStack
 
+    interval anchoredInterval;
+    //interval extendedInterval;
+    bool isAnchored = false;
 
     solvedFragInfo anchorExtendResult;
     interval toCheck = checkStack->back();
@@ -417,72 +467,73 @@ interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack 
             <
             gapRate*abs(toCheck.start-toCheck.end) ){
             // nothing to push to stack, this interval has been completely solved.
-            anchorExtendResult = solvedFragInfo(toCheck.start,mapResults->at(it)[toCheck.start-1].position,
-                                                   toCheck.end, mapResults->at(it)[toCheck.end-1].position,
-                                                   mapResults->at(it)[toCheck.start-1].isReverse, it * shiftSteps );
-            clusters->push_back(anchorExtendResult);
-            return toCheck;
+        anchorExtendResult = solvedFragInfo(toCheck.start,mapResults->at(it)[toCheck.start-1].position,
+                toCheck.end, mapResults->at(it)[toCheck.end-1].position,
+                mapResults->at(it)[toCheck.start-1].isReverse, it * shiftSteps );
+        //clusters->push_back(anchorExtendResult);
+        //return toCheck;
+        anchoredInterval = toCheck;
+        isAnchored = true;
     }
 
     // =====================
     // Check others:
-
-    interval anchoredInterval;
-    //interval extendedInterval;
-    bool isAnchored = false;
     int half = (long) ceil((double) (toCheck.end-toCheck.start)/2);
-//    if ((toCheck.end-toCheck.start) %2 != 0) {
-//        half--;
-//    }
+    if( !isAnchored ){
 
-    for (int i = 1; i < half; i++) {
-        // one from left with all rights
-        if( mapResults->at(it)[toCheck.start+i-1].position == 0 )
-            mapResults->at(it)[toCheck.start+i-1] = uniqueMap( read->substr((toCheck.start+i-1)*chunkSize, chunkSize)
-                                                             ,qc->substr((toCheck.start+i-1)*chunkSize, chunkSize)
-                                                             ,idx );
-        if( mapResults->at(it)[toCheck.start+i-1].position > 0 ){
-            for(int j = 0 ; j < i ; j++){
-                if( mapResults->at(it)[toCheck.start+i-1].isReverse == mapResults->at(it)[toCheck.end-j-1].isReverse &&
-                        abs(mapResults->at(it)[toCheck.start+i-1].position - mapResults->at(it)[toCheck.end-j-1].position
-                            - pow(-1,(mapResults->at(it)[toCheck.start+i-1].isReverse==true?1:0))*(toCheck.start+i-(toCheck.end-j))*chunkSize )
-                        <
-                        gapRate*abs(toCheck.start+i-toCheck.end-j) ){
-                    anchoredInterval = interval( toCheck.start+i, toCheck.end-j);
-                    isAnchored = true;
-                    anchorExtendResult = solvedFragInfo(toCheck.start+i,mapResults->at(it)[toCheck.start+i-1].position,
-                                                           toCheck.end-j, mapResults->at(it)[toCheck.end-j-1].position,
-                                                           mapResults->at(it)[toCheck.start+i-1].isReverse, it * shiftSteps );
-                    // add to readAnchorInfo DS
-                    break;
+        //    if ((toCheck.end-toCheck.start) %2 != 0) {
+        //        half--;
+        //    }
+
+        for (int i = 1; i < half; i++) {
+            // one from left with all rights
+            if( mapResults->at(it)[toCheck.start+i-1].position == 0 )
+                mapResults->at(it)[toCheck.start+i-1] = uniqueMap( read->substr((toCheck.start+i-1)*chunkSize, chunkSize)
+                                                                   ,qc->substr((toCheck.start+i-1)*chunkSize, chunkSize)
+                                                                   ,idx );
+            if( mapResults->at(it)[toCheck.start+i-1].position > 0 ){
+                for(int j = 0 ; j < i ; j++){
+                    if( mapResults->at(it)[toCheck.start+i-1].isReverse == mapResults->at(it)[toCheck.end-j-1].isReverse &&
+                            abs(mapResults->at(it)[toCheck.start+i-1].position - mapResults->at(it)[toCheck.end-j-1].position
+                                - pow(-1,(mapResults->at(it)[toCheck.start+i-1].isReverse==true?1:0))*(toCheck.start+i-(toCheck.end-j))*chunkSize )
+                            <
+                            gapRate*abs(toCheck.start+i-toCheck.end-j) ){
+                        anchoredInterval = interval( toCheck.start+i, toCheck.end-j);
+                        isAnchored = true;
+                        anchorExtendResult = solvedFragInfo(toCheck.start+i,mapResults->at(it)[toCheck.start+i-1].position,
+                                toCheck.end-j, mapResults->at(it)[toCheck.end-j-1].position,
+                                mapResults->at(it)[toCheck.start+i-1].isReverse, it * shiftSteps );
+                        // add to readAnchorInfo DS
+                        break;
+                    }
                 }
             }
-        }
-        if(isAnchored)
-            break;
-        // one from right with all lefts
-        if( mapResults->at(it)[toCheck.end-i-1].position == 0 )
-            mapResults->at(it)[toCheck.end-i-1] = uniqueMap( read->substr((toCheck.end-i-1)*chunkSize, chunkSize)
-                                                           ,qc->substr((toCheck.end-i-1)*chunkSize, chunkSize)
-                                                           ,idx );
-        if( mapResults->at(it)[toCheck.end-i-1].position > 0 ){
-            for(int j = 0 ; j <= i ; j++){
-                if( mapResults->at(it)[toCheck.start+j-1].isReverse == mapResults->at(it)[toCheck.end-i-1].isReverse &&
-                        abs(mapResults->at(it)[toCheck.start+j-1].position - mapResults->at(it)[toCheck.end-i-1].position
-                            - pow(-1,(mapResults->at(it)[toCheck.start+j-1].isReverse==true?1:0))*(toCheck.start+j-(toCheck.end-i))*chunkSize )
-                        <
-                        gapRate*abs(toCheck.start+j-toCheck.end-i) ){
-                    anchoredInterval = interval( toCheck.start+j, toCheck.end-i);
-                    isAnchored = true;
-                    anchorExtendResult = solvedFragInfo(toCheck.start+j,mapResults->at(it)[toCheck.start+j-1].position,
-                                                           toCheck.end-i, mapResults->at(it)[toCheck.end-i-1].position,
-                                                           mapResults->at(it)[toCheck.start+j-1].isReverse, it * shiftSteps );
-                    break;
+            if(isAnchored)
+                break;
+            // one from right with all lefts
+            if( mapResults->at(it)[toCheck.end-i-1].position == 0 )
+                mapResults->at(it)[toCheck.end-i-1] = uniqueMap( read->substr((toCheck.end-i-1)*chunkSize, chunkSize)
+                                                                 ,qc->substr((toCheck.end-i-1)*chunkSize, chunkSize)
+                                                                 ,idx );
+            if( mapResults->at(it)[toCheck.end-i-1].position > 0 ){
+                for(int j = 0 ; j <= i ; j++){
+                    if( mapResults->at(it)[toCheck.start+j-1].isReverse == mapResults->at(it)[toCheck.end-i-1].isReverse &&
+                            abs(mapResults->at(it)[toCheck.start+j-1].position - mapResults->at(it)[toCheck.end-i-1].position
+                                - pow(-1,(mapResults->at(it)[toCheck.start+j-1].isReverse==true?1:0))*(toCheck.start+j-(toCheck.end-i))*chunkSize )
+                            <
+                            gapRate*abs(toCheck.start+j-toCheck.end-i) ){
+                        anchoredInterval = interval( toCheck.start+j, toCheck.end-i);
+                        isAnchored = true;
+                        anchorExtendResult = solvedFragInfo(toCheck.start+j,mapResults->at(it)[toCheck.start+j-1].position,
+                                toCheck.end-i, mapResults->at(it)[toCheck.end-i-1].position,
+                                mapResults->at(it)[toCheck.start+j-1].isReverse, it * shiftSteps );
+                        break;
+                    }
                 }
             }
+            if(isAnchored)
+                break;
         }
-        if(isAnchored)
-            break;
     }
     // =======================
     // Check Middle if needed:
@@ -527,7 +578,7 @@ interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack 
     }
     // ========================
     // Recursivley Check sides:
-    if(!isAnchored){
+    if( !isAnchored ){
         interval tempa = interval(toCheck.start,toCheck.start+half-(1) );
         if( abs(tempa.start - tempa.end) > 0 )
             checkStack->push_back( tempa  );
@@ -542,7 +593,12 @@ interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack 
     // Extend if Possible: (only to check intervals)
     //1: inExtend
     // not yet
+    if(inClustersExtension){
+        // to find in-place balanced structual variations or in aggregation balancer SVs in lng reads...
+        if(BGChangesOnAnchor){
 
+        }
+    }
     //2.a: outExtend left
     //    if(anchoredInterval.start != toCheck.start ){
     //        extendedInterval.start = extendManager( anchoredInterval.start, toCheck.start, read, &anchorExtendResult);
@@ -562,7 +618,8 @@ interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack 
 
     // =====================
     // return solved interval
-    clusters->push_back(anchorExtendResult);
+    if(isAnchored)
+        clusters->push_back(anchorExtendResult);
     //return extendedInterval;
     return anchoredInterval;
 }
@@ -1054,8 +1111,8 @@ int main(int argc, char *argv[]){
     chdir(MAINADDRESS);
     // ===========================================================================================
     // SureMap main:
-    globalMode = "normal";
-    globalMode = "very-sensitive";
+    globalMode = "fast";
+    //globalMode = "very-sensitive";
     //globalMode = "fast";
     for( int i = 0 ; i < MAXTHREADS ; i++ ){
         minVal[i] = 1000;
@@ -1108,7 +1165,11 @@ int main(int argc, char *argv[]){
     string rvAdr = refPrefix + ".rev.fm";
     string rfInf = refPrefix;
     genomeLength = loadRef( rfInf );
-    cerr<<"requested genome string:\n"<<getGenome(199271,200)<<endl;
+    if(BGChanges){
+        bGRight.resize(genomeLength);
+        bGLeft.resize(genomeLength);
+    }
+    //cerr<<"requested genome string:\n"<<getGenome(199271,200)<<endl;
 
     //cerr<<"\n((("<<genomeLength<<endl;
     cerr << "--Ref loading is done!\n";
