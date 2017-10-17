@@ -1,6 +1,7 @@
 #ifndef HEADER_H
 #define HEADER_H
 
+
 #include <QCoreApplication>
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,6 +77,10 @@ int localAlThreshold = LocAlth;
 //int anchoringShift = 5;
 //int assignmentShift = 10; //d = chunkSize - assignmentShift
 bool runAnchoring = true;
+bool inClustersExtension = false;
+long accMinDist = 200;
+bool BGChanges = false;
+bool BGChangesOnAnchor = false;
 bool BGLR = true;               // [true]: Left and Right Binary Genomes
                                 // [false]: only 1 BinaryGenome (less accurate and slower But less Ram usage)
 int shiftIterations = 1;        // max = MAX_SHIFT_ITER
@@ -122,8 +127,6 @@ long long cntCOM = 0, cntBG=0;
 //> End of Settings:               |
 // ================================|
 // ================================'
-
-
 
 
 #endif // HEADER_H
