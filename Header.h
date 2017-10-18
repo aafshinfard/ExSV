@@ -43,6 +43,7 @@ using namespace std;
 #define MAXREADSIZE 5000
 #define MAX_SHIFT_ITER 5
 #define WRITEWHEN 100
+#define MINACCEVENTDEPTH 3
 #define MAINADDRESS "/home/ameer/ExactSV/"
 //#define BUFFERSIZE 1024*1024    // Size of fread Buffer
 //#define MAX_BUFFER_SIZE 100     // each thread will read MAX_BUFFER_SIZE reads in each trial
