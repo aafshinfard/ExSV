@@ -698,6 +698,128 @@ void buildUpEvents(){
         leftE.erase(leftE.begin());
     informativeChunks.clear();
 }
+void debbuildConnections(){
+    vector<feasibleEvents> debug_rightE(rightE);
+    vector<feasibleEvents> debug_leftE(leftE);
+
+    for(vector<feasibleEvents>::iterator it = debug_rightE.begin() ;  it != debug_rightE.end(); ++it){
+        sort(it->informatives.begin(), it->informatives.end(), compConnected);
+        int index = 0 ;
+        for( long long i = 0 ; i < debug_rightE.size(); i++ ){
+            while( !it->informatives[ index ].related_bpIsRight || !it->informatives[ index ].related_loci  )
+                if(++index >= it->informatives.size() )
+                    break;
+            if(index >= it->informatives.size() )
+                break;
+
+            if( it->informatives[ index ].related_loci >= debug_rightE[i].start
+                    &&
+                    it->informatives[ index ].related_loci <= debug_rightE[i].end ){
+                it->connectedEvents.push_back( connectedEvent(i,true,1) );
+                index++;
+                while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                    if(++index >= it->informatives.size() )
+                        break;
+                if(index >= it->informatives.size() )
+                    break;
+                while( it->informatives[ index ].related_loci >= debug_rightE[i].start
+                        &&
+                        it->informatives[ index ].related_loci <= debug_rightE[i].end ){
+                    it->connectedEvents.back().weight++;
+                    index++;
+                    while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                        if(++index >= it->informatives.size() )
+                            break;
+                    if(index >= it->informatives.size() )
+                        break;
+                }
+                if(index >= it->informatives.size() )
+                    break;
+
+            }
+        }
+        index = 0 ;
+        for( long long i = 0 ; i < debug_leftE.size(); i++ ){
+            while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                if(++index >= it->informatives.size() )
+                    break;
+            if(index >= it->informatives.size() )
+                break;
+            if( it->informatives[ index ].related_loci >= debug_leftE[i].start
+                    &&
+                    it->informatives[ index ].related_loci <= debug_leftE[i].end ){
+                it->connectedEvents.push_back( connectedEvent(i,false,1) );
+                index++;
+                while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                    if(++index >= it->informatives.size() )
+                        break;
+                if(index >= it->informatives.size() )
+                    break;
+                while( it->informatives[ index ].related_loci >= debug_leftE[i].start
+                        &&
+                        it->informatives[ index ].related_loci <= debug_leftE[i].end ){
+                    it->connectedEvents.back().weight++;
+                    index++;
+                    while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci)
+                        if(++index >= it->informatives.size() )
+                            break;
+                    if(index >= it->informatives.size() )
+                        break;
+                }
+                if(index >= it->informatives.size() )
+                    break;
+            }
+        }
+    }
+    for(vector<feasibleEvents>::iterator it = debug_leftE.begin() ;  it != debug_leftE.end(); ++it){
+        sort(it->informatives.begin(), it->informatives.end(), compConnected);
+        int index = 0 ;
+        for( long long i = 0 ; i < debug_rightE.size(); i++ ){
+            while( !it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                index++;
+            if( it->informatives[ index ].related_loci >= debug_rightE[i].start
+                    &&
+                    it->informatives[ index ].related_loci <= debug_rightE[i].end ){
+                it->connectedEvents.push_back( connectedEvent(i,true,1) );
+                index++;
+                while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                    index++;
+                while( it->informatives[ index ].related_loci >= debug_rightE[i].start
+                        &&
+                        it->informatives[ index ].related_loci <= debug_rightE[i].end ){
+                    it->connectedEvents.back().weight++;
+                    index++;
+                    while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                        index++;
+                }
+            }
+        }
+        index = 0 ;
+        for( long long i = 0 ; i < debug_leftE.size(); i++ ){
+            while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                index++;
+            if( it->informatives[ index ].related_loci > debug_leftE[i].start
+                    &&
+                    it->informatives[ index ].related_loci < debug_leftE[i].end ){
+                it->connectedEvents.push_back( connectedEvent(i,false,1) );
+                index++;
+                while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                    index++;
+                while( it->informatives[ index ].related_loci >= debug_leftE[i].start
+                        &&
+                        it->informatives[ index ].related_loci <= debug_leftE[i].end ){
+                    it->connectedEvents.back().weight++;
+                    index++;
+                    while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                        index++;
+                }
+            }
+        }
+    }
+    rightE = debug_rightE;
+    leftE = debug_leftE;
+
+}
 void buildConnections(){
     vector<feasibleEvents> debug_rightE(rightE);
     vector<feasibleEvents> debug_leftE(leftE);
@@ -706,7 +828,7 @@ void buildConnections(){
         sort(it->informatives.begin(), it->informatives.end(), compConnected);
         int index = 0 ;
         for( long long i = 0 ; i < rightE.size(); i++ ){
-            while( ! it->informatives[ index ].related_bpIsRight )
+            while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                 if(++index >= it->informatives.size() )
                     break;
             if(index >= it->informatives.size() )
@@ -717,7 +839,7 @@ void buildConnections(){
                     it->informatives[ index ].related_loci <= rightE[i].end ){
                 it->connectedEvents.push_back( connectedEvent(i,true,1) );
                 index++;
-                while( ! it->informatives[ index ].related_bpIsRight )
+                while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                     if(++index >= it->informatives.size() )
                         break;
                 if(index >= it->informatives.size() )
@@ -727,7 +849,7 @@ void buildConnections(){
                         it->informatives[ index ].related_loci <= rightE[i].end ){
                     it->connectedEvents.back().weight++;
                     index++;
-                    while( ! it->informatives[ index ].related_bpIsRight )
+                    while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                         if(++index >= it->informatives.size() )
                             break;
                     if(index >= it->informatives.size() )
@@ -740,7 +862,7 @@ void buildConnections(){
         }
         index = 0 ;
         for( long long i = 0 ; i < leftE.size(); i++ ){
-            while( it->informatives[ index ].related_bpIsRight )
+            while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                 if(++index >= it->informatives.size() )
                     break;
             if(index >= it->informatives.size() )
@@ -750,7 +872,7 @@ void buildConnections(){
                     it->informatives[ index ].related_loci <= leftE[i].end ){
                 it->connectedEvents.push_back( connectedEvent(i,false,1) );
                 index++;
-                while( it->informatives[ index ].related_bpIsRight )
+                while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                     if(++index >= it->informatives.size() )
                         break;
                 if(index >= it->informatives.size() )
@@ -760,7 +882,7 @@ void buildConnections(){
                         it->informatives[ index ].related_loci <= leftE[i].end ){
                     it->connectedEvents.back().weight++;
                     index++;
-                    while( it->informatives[ index ].related_bpIsRight )
+                    while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                         if(++index >= it->informatives.size() )
                             break;
                     if(index >= it->informatives.size() )
@@ -775,42 +897,42 @@ void buildConnections(){
         sort(it->informatives.begin(), it->informatives.end(), compConnected);
         int index = 0 ;
         for( long long i = 0 ; i < rightE.size(); i++ ){
-            while( ! it->informatives[ index ].related_bpIsRight )
+            while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                 index++;
             if( it->informatives[ index ].related_loci >= rightE[i].start
                     &&
                     it->informatives[ index ].related_loci <= rightE[i].end ){
                 it->connectedEvents.push_back( connectedEvent(i,true,1) );
                 index++;
-                while( ! it->informatives[ index ].related_bpIsRight )
+                while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                     index++;
                 while( it->informatives[ index ].related_loci >= rightE[i].start
                         &&
                         it->informatives[ index ].related_loci <= rightE[i].end ){
                     it->connectedEvents.back().weight++;
                     index++;
-                    while( ! it->informatives[ index ].related_bpIsRight )
+                    while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                         index++;
                 }
             }
         }
         index = 0 ;
         for( long long i = 0 ; i < leftE.size(); i++ ){
-            while( it->informatives[ index ].related_bpIsRight )
+            while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                 index++;
             if( it->informatives[ index ].related_loci > leftE[i].start
                     &&
                     it->informatives[ index ].related_loci < leftE[i].end ){
                 it->connectedEvents.push_back( connectedEvent(i,false,1) );
                 index++;
-                while( it->informatives[ index ].related_bpIsRight )
+                while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                     index++;
                 while( it->informatives[ index ].related_loci >= leftE[i].start
                         &&
                         it->informatives[ index ].related_loci <= leftE[i].end ){
                     it->connectedEvents.back().weight++;
                     index++;
-                    while( it->informatives[ index ].related_bpIsRight )
+                    while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
                         index++;
                 }
             }
@@ -818,7 +940,23 @@ void buildConnections(){
     }
     vector<feasibleEvents> debug2_rightE(rightE);
     vector<feasibleEvents> debug2_leftE(leftE);
-    ;
+
+}
+int overlapsMaxDepth(string which, long long start, long long end){
+    // WRITE A BETTER ONE... PLEASE.
+    int overlaps = 0;
+    if( which == "left" ){
+        for(vector<feasibleEvents>::iterator it = leftE.begin() ;  it != leftE.end(); ++it){
+            if( (it->start > start && it->start > end) || (it->end > start && it->end > end) )
+                overlaps = max( overlaps , it->maxDepth );
+        }
+    }else{
+        for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
+            if( (it->start > start && it->start > end) || (it->end > start && it->end > end) )
+                overlaps = max( overlaps , it->maxDepth );
+        }
+    }
+    return overlaps;
 }
 
 void writeEvents(){
@@ -827,17 +965,21 @@ void writeEvents(){
 
     ofstre_rightEvents<<"Start..\tEnd...\tMaxDepth\t#Informatives\t|\tConnections(index-weight-lef/right BP)"<<endl;
     for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
-        ofstre_rightEvents<<it->start<<"\t"<<it->end<<"\t"<<it->maxDepth<<"\t"<<it->informatives.size()<<"\t|";
-        for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ )
-            ofstre_rightEvents<<"\t"<<it->connectedEvents[i].index<<"\t"<<it->connectedEvents[i].weight<<"\t"<<(it->connectedEvents[i].isRightBP?"\-\> |":"\<\- |");
-        ofstre_rightEvents<<endl;
+        if( it->maxDepth + overlapsMaxDepth("left",it->start,it->end) > MINACCEVENTDEPTH ){
+            ofstre_rightEvents<<it->start<<"\t"<<it->end<<"\t"<<it->maxDepth<<"\t"<<it->informatives.size()<<"\t|";
+            for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ )
+                ofstre_rightEvents<<"\t"<<it->connectedEvents[i].index<<"\t"<<it->connectedEvents[i].weight<<"\t"<<(it->connectedEvents[i].isRightBP?"\-\> |":"\<\- |");
+            ofstre_rightEvents<<endl;
+        }
     }
     ofstre_leftEvents<<"Start..\tEnd...\tMaxDepth\t#Informatives\t|\tConnections..."<<endl;
     for(vector<feasibleEvents>::iterator it = leftE.begin() ;  it != leftE.end(); ++it){
-        ofstre_leftEvents<<it->start<<"\t"<<it->end<<"\t"<<it->maxDepth<<"\t"<<it->informatives.size()<<"\t|";
-        for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ )
-            ofstre_leftEvents<<"\t"<<it->connectedEvents[i].index<<"\t"<<it->connectedEvents[i].weight<<"\t"<<(it->connectedEvents[i].isRightBP?"\-\> |":"\<\- |");
-        ofstre_leftEvents<<endl;
+        if( it->maxDepth + overlapsMaxDepth("right",it->start,it->end) > MINACCEVENTDEPTH ){
+            ofstre_leftEvents<<it->start<<"\t"<<it->end<<"\t"<<it->maxDepth<<"\t"<<it->informatives.size()<<"\t|";
+            for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ )
+                ofstre_leftEvents<<"\t"<<it->connectedEvents[i].index<<"\t"<<it->connectedEvents[i].weight<<"\t"<<(it->connectedEvents[i].isRightBP?"\-\> |":"\<\- |");
+            ofstre_leftEvents<<endl;
+        }
     }
     ofstre_rightEvents.close();
     ofstre_leftEvents.close();
@@ -1230,7 +1372,9 @@ int main(int argc, char *argv[]){
         buildUpEvents();
         cerr<<"\n Events has been Built...";
         cerr<<"\n # connected Events: "<<connectedCntr;
-        buildConnections();
+        debbuildConnections();
+        //buildConnections();
+
 
         cerr<<"\n Connection has been Built...";
         //filterEvents();
