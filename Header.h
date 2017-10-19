@@ -1,3 +1,17 @@
+/**
+ * @file    Header.h
+ * @author  Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+ *                                  <afshinfard (at) gmail.com>
+ *
+ * @section LICENCE
+ *
+ * Copyright (C) 2017-2020
+ *   Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+ *                           <afshinfard (at) gmail.com>
+ *	 Seyed Abolfazl Motahari <motahari (at) sharif.edu
+ *
+ **/
+
 #ifndef HEADER_H
 #define HEADER_H
 
@@ -57,11 +71,12 @@ string readsFileName = "readsv2"; //string readsFileName = "reads_t1";    //stri
 int readsFileCount = 2;
 string genomeName = "Chr19.fa"; //string genomeName = "E_coli_K12_DH10B.fa";    //string genomeName = "chr19.fa";
 //string indexName = "Chr19"; //string indexName = "E_coli_K12_DH10B";        //string indexName = "chr19";
-string outputDir = "/home/ameer/ExactSV/SV_out/";
+string outputDir = "~/home/ameer/ExactSV/SV_out/";
 
 string rightEventsFileName = outputDir+"rightEvents";
 string leftEventsFileName = outputDir+"leftEvents";
 string informativeFileName = outputDir+"informatives";
+string informativeFullyFileName = outputDir+"informativesFully";
 string doubInformativeFileName = outputDir+"doubInformatives";
 string unMappedFileName = outputDir+"unMapped";
 //string outputDir = "/home/ubuntu/SVAnchoring/SV_out2/";
@@ -87,6 +102,7 @@ bool BGLR = true;               // [true]: Left and Right Binary Genomes
 int shiftIterations = 1;        // max = MAX_SHIFT_ITER
 bool logTxt = false;
 bool pairedEndedReads = false;  // if true, then reads must be in two files "readName"_1.fq and "readName"_2.fq
+bool runPhase1 = false;
 bool runPhase2 = true;
 bool writeInfo = true;
 

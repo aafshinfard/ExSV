@@ -1,3 +1,17 @@
+/**
+ * @file    DataStructures.h
+ * @author  Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+ *                                  <afshinfard (at) gmail.com>
+ *
+ * @section LICENCE
+ *
+ * Copyright (C) 2017-2020
+ *   Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+ *                           <afshinfard (at) gmail.com>
+ *   Damoon Nashta-ali       <damoun_dna (at) yahoo.com>
+ *	 Seyed Abolfazl Motahari <motahari (at) sharif.edu
+ *
+ **/
 
 #include "LocalAligner.h"
 using namespace std;
