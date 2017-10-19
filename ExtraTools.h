@@ -1,7 +1,7 @@
 /**
  * @file    ExtraTools.h
  * @author  Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
- *                                  <afshinfard (at) gmail.com>
+ *                                  <a.afshinfard (at) gmail.com>
  *
  * @section LICENCE
  *

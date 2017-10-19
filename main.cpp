@@ -9,7 +9,7 @@
  * @copyright (c) 2017
  *
  *      Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
- *                              <afshinfard (at) gmail.com>
+ *                              <a.afshinfard (at) gmail.com>
  *      Damoon Nashta-ali       <damoun_dna (at) yahoo.com>
  *      Seyed Abolfazl Motahari <motahari (at) sharif.edu
  *
@@ -777,43 +777,65 @@ void debbuildConnections(){
         int index = 0 ;
         for( long long i = 0 ; i < debug_rightE.size(); i++ ){
             while( !it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
-                index++;
+                if(++index >= it->informatives.size() )
+                    break;
+            if(index >= it->informatives.size() )
+                break;
             if( it->informatives[ index ].related_loci >= debug_rightE[i].start
                     &&
                     it->informatives[ index ].related_loci <= debug_rightE[i].end ){
                 it->connectedEvents.push_back( connectedEvent(i,true,1) );
                 index++;
-                while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
-                    index++;
+                while( (!it->informatives[ index ].related_bpIsRight) ||  (!it->informatives[ index ].related_loci) )
+                    if(++index >= it->informatives.size() )
+                        break;
+                if(index >= it->informatives.size() )
+                    break;
                 while( it->informatives[ index ].related_loci >= debug_rightE[i].start
                         &&
                         it->informatives[ index ].related_loci <= debug_rightE[i].end ){
                     it->connectedEvents.back().weight++;
                     index++;
-                    while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
-                        index++;
+                    while( (!it->informatives[ index ].related_bpIsRight) ||  !it->informatives[ index ].related_loci )
+                        if(++index >= it->informatives.size() )
+                            break;
+                    if(index >= it->informatives.size() )
+                        break;
                 }
+                if(index >= it->informatives.size() )
+                    break;
             }
         }
         index = 0 ;
         for( long long i = 0 ; i < debug_leftE.size(); i++ ){
             while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
-                index++;
+                if(++index >= it->informatives.size() )
+                    break;
+            if(index >= it->informatives.size() )
+                break;
             if( it->informatives[ index ].related_loci > debug_leftE[i].start
                     &&
                     it->informatives[ index ].related_loci < debug_leftE[i].end ){
                 it->connectedEvents.push_back( connectedEvent(i,false,1) );
                 index++;
                 while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
-                    index++;
+                    if(++index >= it->informatives.size() )
+                        break;
+                if(index >= it->informatives.size() )
+                    break;
                 while( it->informatives[ index ].related_loci >= debug_leftE[i].start
                         &&
                         it->informatives[ index ].related_loci <= debug_leftE[i].end ){
                     it->connectedEvents.back().weight++;
                     index++;
                     while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
-                        index++;
+                        if(++index >= it->informatives.size() )
+                            break;
+                    if(index >= it->informatives.size() )
+                        break;
                 }
+                if(index >= it->informatives.size() )
+                    break;
             }
         }
     }
@@ -948,12 +970,12 @@ int overlapsMaxDepth(string which, long long start, long long end){
     int overlaps = 0;
     if( which == "left" ){
         for(vector<feasibleEvents>::iterator it = leftE.begin() ;  it != leftE.end(); ++it){
-            if( (it->start > start && it->start > end) || (it->end > start && it->end > end) )
+            if( (it->start >= start && it->start <= end) || (it->end >= start && it->end <= end) )
                 overlaps = max( overlaps , it->maxDepth );
         }
     }else{
         for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
-            if( (it->start > start && it->start > end) || (it->end > start && it->end > end) )
+            if( (it->start >= start && it->start <= end) || (it->end >= start && it->end <= end) )
                 overlaps = max( overlaps , it->maxDepth );
         }
     }
@@ -966,19 +988,37 @@ void writeEvents(){
 
     ofstre_rightEvents<<"Start..\tEnd...\tMaxDepth\t#Informatives\t|\tConnections(index-weight-lef/right BP)"<<endl;
     for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
-        if( it->maxDepth + overlapsMaxDepth("left",it->start,it->end) > MINACCEVENTDEPTH ){
+        if( (it->maxDepth + overlapsMaxDepth("left",it->start,it->end) > MINACCEVENTDEPTH) || it->connectedEvents.size() > 0 ){
             ofstre_rightEvents<<it->start<<"\t"<<it->end<<"\t"<<it->maxDepth<<"\t"<<it->informatives.size()<<"\t|";
             for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ )
                 ofstre_rightEvents<<"\t"<<it->connectedEvents[i].index<<"\t"<<it->connectedEvents[i].weight<<"\t"<<(it->connectedEvents[i].isRightBP?"\-\> |":"\<\- |");
             ofstre_rightEvents<<endl;
         }
+        bool writeReadNames = true;
+        if(writeReadNames){
+            ofstre_rightEvents<<"readNames:\n";
+            for(int i = 0 ; i < it->informatives.size() ; i++ ){
+                ofstre_rightEvents<<it->informatives[i].readName;
+            }
+            ofstre_rightEvents<<endl;
+        }
     }
     ofstre_leftEvents<<"Start..\tEnd...\tMaxDepth\t#Informatives\t|\tConnections..."<<endl;
     for(vector<feasibleEvents>::iterator it = leftE.begin() ;  it != leftE.end(); ++it){
-        if( it->maxDepth + overlapsMaxDepth("right",it->start,it->end) > MINACCEVENTDEPTH ){
+        if( (it->maxDepth + overlapsMaxDepth("right",it->start,it->end) > MINACCEVENTDEPTH) || it->connectedEvents.size() > 0 ){
+            int aaa = overlapsMaxDepth("right",it->start,it->end);
+            cerr<<it->maxDepth<<" "<<overlapsMaxDepth("right",it->start,it->end)<<" "<<it->start<<" "<< it->end <<endl;
             ofstre_leftEvents<<it->start<<"\t"<<it->end<<"\t"<<it->maxDepth<<"\t"<<it->informatives.size()<<"\t|";
             for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ )
                 ofstre_leftEvents<<"\t"<<it->connectedEvents[i].index<<"\t"<<it->connectedEvents[i].weight<<"\t"<<(it->connectedEvents[i].isRightBP?"\-\> |":"\<\- |");
+            ofstre_leftEvents<<endl;
+        }
+        bool writeReadNames = true;
+        if(writeReadNames){
+            ofstre_leftEvents<<"readNames:\n";
+            for(int i = 0 ; i < it->informatives.size() ; i++ ){
+                ofstre_leftEvents<<it->informatives[i].readName;
+            }
             ofstre_leftEvents<<endl;
         }
     }
@@ -1373,7 +1413,7 @@ int main(int argc, char *argv[]){
 
         if(!runPhase2){
             ofstream ofstr_InformativesFully(informativeFullyFileName.c_str());
-            vector<informativeChunk> infos(informativeChunks);
+            //vector<informativeChunk> infos(informativeChunks);
             for(vector<informativeChunk>::iterator it = informativeChunks.begin() ; it != informativeChunks.end(); ++it){
                 ofstr_InformativesFully << (*it);
             }
@@ -1381,13 +1421,12 @@ int main(int argc, char *argv[]){
         }
         delete ids;
         ifstr.close();
-
     }
     if(runPhase2){
         if(!runPhase1){
             // load from file
             string a = informativeFullyFileName.c_str();
-            ifstream indata("SV_out/informativesFully");
+            ifstream indata(informativeFullyFileName.c_str());
 
             informativeChunk pr;
             //getline(indata, a, '~');
@@ -1412,7 +1451,7 @@ int main(int argc, char *argv[]){
         cerr<<"\n Writing to File...\n";
         writeEvents();
     }
-
+    cerr<<"\n Finished...\n";
     return a.exec();
 }
 
