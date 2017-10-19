@@ -1,3 +1,18 @@
+/**
+ * @file    ExtraTools.h
+ * @author  Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+ *                                  <afshinfard (at) gmail.com>
+ *
+ * @section LICENCE
+ *
+ * Copyright (C) 2017-2020
+ *   Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+ *                           <afshinfard (at) gmail.com>
+ *	 Seyed Abolfazl Motahari <motahari (at) sharif.edu
+ *
+ **/
+
+
 #ifndef EXTRATOOLS_H
 #define EXTRATOOLS_H
 

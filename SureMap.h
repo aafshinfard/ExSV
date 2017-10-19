@@ -4,7 +4,6 @@
  *
  * @section LICENCE
  *
- *
  * Copyright (C) 2017-2020
  *   MohammadJavad Rezaei Seraji <mjrezaei (at) ce.sharif.edu>
  *	 Seyed Abolfazl Motahari <motahari (at) sharif.edu

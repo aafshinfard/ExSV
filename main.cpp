@@ -68,6 +68,7 @@ readMappingInfo globalRMI[MAXTHREADS];
 ofstream ofstre_rightEvents(rightEventsFileName.c_str());
 ofstream ofstre_leftEvents(leftEventsFileName.c_str());
 ofstream ofstr_Informatives(informativeFileName.c_str());
+
 ofstream ofstr_2Informatives(doubInformativeFileName.c_str());
 ofstream ofstr_unMapped(unMappedFileName.c_str());
 
@@ -1069,7 +1070,7 @@ void processing( long long* readIndex ,string* readsName ,string* reads ,string 
                  && !(clusters[0].startChunk == 1
                      && clusters[0].endChunk == terminal ) ) ){
             //isInformative
-            if(runPhase2){
+            if(true){
                 if(clusters.size() > 1){
                     connectedCntr++;
                 }
@@ -1251,123 +1252,152 @@ int main(int argc, char *argv[]){
 
     QCoreApplication a(argc, argv);
     chdir(MAINADDRESS);
-    // ===========================================================================================
-    // SureMap main:
-    globalMode = "fast";
-    //globalMode = "very-sensitive";
-    //globalMode = "fast";
-    for( int i = 0 ; i < MAXTHREADS ; i++ ){
-        minVal[i] = 1000;
-        mxFailed[i] = 1000;
 
-        globalRMI[i].uniqeOption = globalUniqeOption;
-        globalRMI[i].maxReport = globalMaxReport;
-        globalRMI[i].bestOne = globalBestOne;
-        globalRMI[i].maxDiffMismatch = globalMaxDiffMismatch;
-        globalRMI[i].maxDiffEdit = globalMaxDiffEdit;
-        globalRMI[i].gap = globalGap;
-        globalRMI[i].noisePercent = globalNoisePercent;
+    if(runPhase1){
+
+        // ===========================================================================================
+        // SureMap main:
+        globalMode = "fast";
+        //globalMode = "very-sensitive";
+        //globalMode = "fast";
+        for( int i = 0 ; i < MAXTHREADS ; i++ ){
+            minVal[i] = 1000;
+            mxFailed[i] = 1000;
+
+            globalRMI[i].uniqeOption = globalUniqeOption;
+            globalRMI[i].maxReport = globalMaxReport;
+            globalRMI[i].bestOne = globalBestOne;
+            globalRMI[i].maxDiffMismatch = globalMaxDiffMismatch;
+            globalRMI[i].maxDiffEdit = globalMaxDiffEdit;
+            globalRMI[i].gap = globalGap;
+            globalRMI[i].noisePercent = globalNoisePercent;
+
+        }
+        if( globalMode == "fast" )
+            Mode = 4, mc =  4;
+        else if( globalMode == "normal" )
+            Mode = 3, mc = 10;
+        else if( globalMode == "sensitive" )
+            Mode = 3, mc = 10;
+        else
+            Mode = 1000, mc = 1000;
+
+        std::srand ( unsigned ( std::time(0) ) );
+        vector< unsigned short > test;
+        int32_t opt,nqrys,maxqry,i;
+        char* idxname;
+        char* qryname;
+        FILE* f;
+        uint8_t** queries;
+        char buf[4096];
+        uint32_t start,stop,cnt;
+        string args[100];
+
+        // p2
+        ///////////////////////////
+        // Setting:
+        idxname = "/home/ameer/ExactSV/Chr19";
+        qryname = "";
+        outputAdr = "/outDir";
+
+        ofstream fout( outputAdr );
+        fout.close();
+        string refPrefix = idxname;
+        refPrefix = getValidPrefix( refPrefix );
+        //cerr << refPrefix << endl;
+        string fastqAdr = qryname;
+        string fwAdr = refPrefix + ".fm";
+        string rvAdr = refPrefix + ".rev.fm";
+        string rfInf = refPrefix;
+        genomeLength = loadRef( rfInf );
+        if(BGChanges){
+            bGRight.resize(genomeLength);
+            bGLeft.resize(genomeLength);
+        }
+        //cerr<<"requested genome string:\n"<<getGenome(199271,200)<<endl;
+
+        //cerr<<"\n((("<<genomeLength<<endl;
+        cerr << "--Ref loading is done!\n";
+        /* load index */
+        fmIdx.load(fwAdr);
+        cerr << "--forward BWT loading is done!\n";
+        revIdx.load( rvAdr );
+        cerr << "--Reverse BWT loading is done!\n";
+        totChar = fmIdx.sigma;
+        //Aligner( fastqAdr );
+
+        // ===========================================================================================
+
+
+        characterPerRow = findCharacterPerRow(genomeName);
+        //genomeLength = getGenomeLength();
+        string currentFileName;
+        if(readsFileCount == 1)
+            currentFileName = readsFileName+".fq";
+        else if(readsFileCount > 1)
+            currentFileName = readsFileName+"_1.fq";
+        else
+        {
+            cerr<<"\n Wrong number of files... (<1).\n Extited";
+            return 0;
+        }
+        //cerr<<currentFileName<<endl;
+        ifstream ifstr(currentFileName.c_str());
+
+        int *ids;
+        ids = new int[numberOfThreads];
+        vector<thread> threads(numberOfThreads);
+        auto T1 = std::chrono::high_resolution_clock::now();
+
+        for (int i = 0; i < numberOfThreads; i++) {
+            ids[i] = i;
+            //cerr<<"\n before thread "<<i<<endl;
+            threads[i] = thread(mt_ReadAndProcess, &ifstr ,  &ids[i] );
+        }
+        // wait until all threads have finished
+        for (int i = 0; i < numberOfThreads; i++){
+            threads[i].join();
+        }
+        auto T2 = std::chrono::high_resolution_clock::now();
+        auto DD = std::chrono::duration_cast< std::chrono::seconds>(T2 - T1);
+        cerr << "\n________________________________\n Total Run Time = " << DD.count() << "s" << endl;
+        cout<<"\n Mapping Time = "<< (double)mappingTime/CLOCKS_PER_SEC <<endl;
+        cout<<"\n Extension Time = "<< (double)extensionTime/CLOCKS_PER_SEC <<endl;
+        cerr<< "\n________________________________\n "<<" Reads count: "<<rdcntr<<endl;
+        cerr<<" unMapped:       "<<((double) cnt_unmapped*100/rdcntr)<<"\%\t ("<<cnt_unmapped<<")\n";
+        cerr<<" informative:    "<<((double) cnt_informatives*100/rdcntr)<<"\%\t ("<<cnt_informatives<<")\n";
+        cerr<<" dbl informative:"<<((double) cnt_2informatives*100/rdcntr)<<"\%\t ("<<cnt_2informatives<<")\n";
+        cerr<< "\n________________________________\n";
+        cerr<< "\n Phase1 Successfully Finished.";
+        cerr<< "\n________________________________\n";
+
+        if(!runPhase2){
+            ofstream ofstr_InformativesFully(informativeFullyFileName.c_str());
+            vector<informativeChunk> infos(informativeChunks);
+            for(vector<informativeChunk>::iterator it = informativeChunks.begin() ; it != informativeChunks.end(); ++it){
+                ofstr_InformativesFully << (*it);
+            }
+            ofstr_InformativesFully.close();
+        }
+        delete ids;
+        ifstr.close();
 
     }
-    if( globalMode == "fast" )
-        Mode = 4, mc =  4;
-    else if( globalMode == "normal" )
-        Mode = 3, mc = 10;
-    else if( globalMode == "sensitive" )
-        Mode = 3, mc = 10;
-    else
-        Mode = 1000, mc = 1000;
-
-    std::srand ( unsigned ( std::time(0) ) );
-    vector< unsigned short > test;
-    int32_t opt,nqrys,maxqry,i;
-    char* idxname;
-    char* qryname;
-    ///////////////////////////
-    // Setting:
-    idxname = "/home/ameer/ExactSV/Chr19";
-    qryname = "";
-    outputAdr = "/outDir";
-
-    FILE* f;
-    uint8_t** queries;
-    char buf[4096];
-    uint32_t start,stop,cnt;
-    string args[100];
-
-    // p2
-
-    ofstream fout( outputAdr );
-    fout.close();
-    string refPrefix = idxname;
-    refPrefix = getValidPrefix( refPrefix );
-    //cerr << refPrefix << endl;
-    string fastqAdr = qryname;
-    string fwAdr = refPrefix + ".fm";
-    string rvAdr = refPrefix + ".rev.fm";
-    string rfInf = refPrefix;
-    genomeLength = loadRef( rfInf );
-    if(BGChanges){
-        bGRight.resize(genomeLength);
-        bGLeft.resize(genomeLength);
-    }
-    //cerr<<"requested genome string:\n"<<getGenome(199271,200)<<endl;
-
-    //cerr<<"\n((("<<genomeLength<<endl;
-    cerr << "--Ref loading is done!\n";
-    /* load index */
-    fmIdx.load(fwAdr);
-    cerr << "--forward BWT loading is done!\n";
-    revIdx.load( rvAdr );
-    cerr << "--Reverse BWT loading is done!\n";
-    totChar = fmIdx.sigma;
-    //Aligner( fastqAdr );
-
-    // ===========================================================================================
-
-
-    characterPerRow = findCharacterPerRow(genomeName);
-    //genomeLength = getGenomeLength();
-    string currentFileName;
-    if(readsFileCount == 1)
-        currentFileName = readsFileName+".fq";
-    else if(readsFileCount > 1)
-        currentFileName = readsFileName+"_1.fq";
-    else
-    {
-        cerr<<"\n Wrong number of files... (<1).\n Extited";
-        return 0;
-    }
-    //cerr<<currentFileName<<endl;
-    ifstream ifstr(currentFileName.c_str());
-
-    int *ids;
-    ids = new int[numberOfThreads];
-    vector<thread> threads(numberOfThreads);
-    auto T1 = std::chrono::high_resolution_clock::now();
-
-    for (int i = 0; i < numberOfThreads; i++) {
-        ids[i] = i;
-        //cerr<<"\n before thread "<<i<<endl;
-        threads[i] = thread(mt_ReadAndProcess, &ifstr ,  &ids[i] );
-    }
-    // wait until all threads have finished
-    for (int i = 0; i < numberOfThreads; i++){
-        threads[i].join();
-    }
-    auto T2 = std::chrono::high_resolution_clock::now();
-    auto DD = std::chrono::duration_cast< std::chrono::seconds>(T2 - T1);
-    cerr << "\n________________________________\n Total Run Time = " << DD.count() << "s" << endl;
-    cout<<"\n Mapping Time = "<< (double)mappingTime/CLOCKS_PER_SEC <<endl;
-    cout<<"\n Extension Time = "<< (double)extensionTime/CLOCKS_PER_SEC <<endl;
-    cerr<< "\n________________________________\n "<<" Reads count: "<<rdcntr<<endl;
-    cerr<<" unMapped:       "<<((double) cnt_unmapped*100/rdcntr)<<"\%\t ("<<cnt_unmapped<<")\n";
-    cerr<<" informative:    "<<((double) cnt_informatives*100/rdcntr)<<"\%\t ("<<cnt_informatives<<")\n";
-    cerr<<" dbl informative:"<<((double) cnt_2informatives*100/rdcntr)<<"\%\t ("<<cnt_2informatives<<")\n";
-    cerr<< "\n________________________________\n";
-    cerr<< "\n Phase1 Successfully Finished.";
-    cerr<< "\n________________________________\n";
     if(runPhase2){
+        if(!runPhase1){
+            // load from file
+            string a = informativeFullyFileName.c_str();
+            ifstream indata("SV_out/informativesFully");
+
+            informativeChunk pr;
+            //getline(indata, a, '~');
+            while(indata >> pr)
+            {
+                informativeChunks.push_back(pr);
+                std::cout << pr;
+            }
+        }
+        vector<informativeChunk> infos(informativeChunks);
         cerr<<"\n Phase2 Started...";
         buildUpEvents();
         cerr<<"\n Events has been Built...";
@@ -1382,8 +1412,7 @@ int main(int argc, char *argv[]){
         cerr<<"\n Writing to File...\n";
         writeEvents();
     }
-    delete ids;
-    ifstr.close();
+
     return a.exec();
 }
 

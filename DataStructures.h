@@ -1,3 +1,18 @@
+/**
+ * @file    DataStructures.h
+ * @author  Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+ *                                  <afshinfard (at) gmail.com>
+ *
+ * @section LICENCE
+ *
+ * Copyright (C) 2017-2020
+ *   Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+ *                           <afshinfard (at) gmail.com>
+ *	 Seyed Abolfazl Motahari <motahari (at) sharif.edu
+ *
+ **/
+
+
 #ifndef DATASTRUCTURES_H
 #define DATASTRUCTURES_H
 #include <cstdint>
@@ -23,6 +38,32 @@ struct informativeChunk{
     //        return a.loci < b.loci;
     //    }
 };
+
+//std::ostream& dump(std::ostream &o, const informativeChunk& p)
+//{
+//    return o << p.readName << endl << p.loci << endl << p.bpIsRight << endl << p.isRelated << endl << p.related_loci << endl << p.related_bpIsRight << endl;
+//}
+//std::ostream& operator << (std::ostream &o,const informativeChunk &a){
+//  return dump(o,a);
+//}
+std::ostream& operator<<(std::ostream& os, const informativeChunk& pr)
+{
+    return os << pr.readName << " " << pr.loci << " " << pr.bpIsRight << " " << pr.isRelated << " " << pr.related_loci << " " << pr.related_bpIsRight   << endl;
+}
+std::istream& operator>>(std::istream& is, informativeChunk& pr)
+{
+    string newName;
+    informativeChunk new_pr;
+    if(    is >> std::ws
+        && is >> newName /*std::getline(is, newName, 'q')*/
+        && is >> new_pr.loci >> new_pr.bpIsRight >> new_pr.isRelated >> new_pr.related_loci >> new_pr.related_bpIsRight )
+    {
+        new_pr.readName = newName;
+        pr = new_pr; // could do more validation here
+    }else cout<<"Reading format problem!";
+    return is;
+}
+
 bool operator<(const informativeChunk &a, const informativeChunk &b)
 {
     return a.loci < b.loci;
@@ -100,10 +141,15 @@ struct unMappedReads{
 };
 
 
+//
+//
+//
+//
+//
 struct informativeReadsData{
     long long index = 0;
-    string readName = "";
-    string readSeq = "";
+    string readName = "EMP";
+    string readSeq = "EMP";
     vector<solvedFragInfo> clusters;
     informativeReadsData(){}
     informativeReadsData( long long indexx, string readname, string readseq, vector<solvedFragInfo> clusterss):
@@ -112,6 +158,22 @@ struct informativeReadsData{
     }
 
 };
+//std::istream& operator>>(std::istream& is, informativeReadsData& pr)
+//{
+//    informativeReadsData new_pr;
+//    if(    is >> std::ws
+//        && std::getline(is, new_pr.Name, '~')
+//        && is >> new_pr.StartSalary >> new_pr.Age )
+//    {
+//        pr = new_pr; // could do more validation here
+//    }
+//    return is;
+//}
+
+//std::ostream& operator<<(std::ostream& os, const informativeReadsData& pr)
+//{
+//    return os << pr.index << " " << pr.readName << " " << pr.readSeq << " " << pr.clusters << '\n';
+//}
 
 struct interval{
     long start = 0;
