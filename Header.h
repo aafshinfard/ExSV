@@ -1,7 +1,7 @@
 /**
  * @file    Header.h
  * @author  Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
- *                                  <afshinfard (at) gmail.com>
+ *                                  <a.afshinfard (at) gmail.com>
  *
  * @section LICENCE
  *
@@ -57,7 +57,7 @@ using namespace std;
 #define MAXREADSIZE 5000
 #define MAX_SHIFT_ITER 5
 #define WRITEWHEN 100
-#define MINACCEVENTDEPTH 3
+#define MINACCEVENTDEPTH 0
 #define MAINADDRESS "/home/ameer/ExactSV/"
 //#define BUFFERSIZE 1024*1024    // Size of fread Buffer
 //#define MAX_BUFFER_SIZE 100     // each thread will read MAX_BUFFER_SIZE reads in each trial
@@ -71,7 +71,7 @@ string readsFileName = "readsv2"; //string readsFileName = "reads_t1";    //stri
 int readsFileCount = 2;
 string genomeName = "Chr19.fa"; //string genomeName = "E_coli_K12_DH10B.fa";    //string genomeName = "chr19.fa";
 //string indexName = "Chr19"; //string indexName = "E_coli_K12_DH10B";        //string indexName = "chr19";
-string outputDir = "~/home/ameer/ExactSV/SV_out/";
+string outputDir = "/home/ameer/ExactSV/SV_out/";
 
 string rightEventsFileName = outputDir+"rightEvents";
 string leftEventsFileName = outputDir+"leftEvents";
