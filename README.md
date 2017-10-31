@@ -11,25 +11,17 @@
 * Able to use a mixture of short and long reads.
 
 
-## Authors  
+## Author
 
-* *Amirhosein Afshinfard   
+* Amirhosein Afshinfard <afshinfard (at) gmail.com>
 
-* *<afshinfard (at) ce.sharif.edu>
-
-* *<afshinfard (at) gmail.com>
-
-* *Bioinformatics Research Lab - Sharif Uiversity of Technology
-
-*
+* Bioinformatics Research Lab - Sharif Uiversity of Technology
 
 ## Cite
 
 * paper to be submitted soon
 
 ## Copyright (c) 2017
-
-*
 
 ####  Amirhosein Afshinfard   <afshinfard (at) gmail.com>
 
