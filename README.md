@@ -1,6 +1,6 @@
 # ExactSV
 
-# not completed yet
+# not completed yet, evaluation stage.
 
 ## Features
 
@@ -13,9 +13,9 @@
 
 ## Author
 
-* Amirhosein Afshinfard <afshinfard (at) gmail.com>
+ Amirhosein Afshinfard <afshinfard (at) gmail.com>
 
-* Bioinformatics Research Lab - Sharif Uiversity of Technology
+ Bioinformatics Research Lab - Sharif Uiversity of Technology
 
 ## Cite
 
