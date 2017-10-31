@@ -1,23 +1,23 @@
 # ExactSV
-____________________
+
 # not completed yet
 
 Amirhosein Afshinfard
 
 
-## @author  Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+## Authors  Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
 
-*-                                 <afshinfard (at) gmail.com>
+* -                               <afshinfard (at) gmail.com>
 
-*-          Bioinformatics Research Lab - Sharif Uiversity of Technology
-
-*
-
-## @cite
+* -          Bioinformatics Research Lab - Sharif Uiversity of Technology
 
 *
 
-## @copyright (c) 2017
+## Cite
+
+*
+
+## Copyright (c) 2017
 
 *
 
