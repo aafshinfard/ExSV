@@ -69,10 +69,10 @@ bool operator<(const informativeChunk &a, const informativeChunk &b)
     return a.loci < b.loci;
 }
 bool compLoci(const informativeChunk &a, const informativeChunk &b){
-    return a.loci < a.loci;
+    return a.loci < b.loci;
 }
 bool compConnected(const informativeChunk &a, const informativeChunk &b){
-    return a.related_loci < a.related_loci;
+    return a.related_loci < b.related_loci;
 }
 
 struct connectedEvent{
