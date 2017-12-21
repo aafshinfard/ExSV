@@ -1,31 +1,31 @@
 # ExactSV
-____________________
-# not completed yet
 
-Amirhosein Afshinfard
+# not completed yet, evaluation stage.
+
+## Features
+
+* Suitable for detection of complex structural variants.
+
+* Fast decetion by expeditiously eliminating non-informative reads.
+
+* Able to use a mixture of short and long reads.
 
 
-## @author  Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
+## Author
 
-*-                                 <afshinfard (at) gmail.com>
+ Amirhosein Afshinfard <afshinfard (at) gmail.com>
 
-*-          Bioinformatics Research Lab - Sharif Uiversity of Technology
+ Bioinformatics Research Lab - Sharif Uiversity of Technology
 
-*
+## Cite
 
-## @cite
+* paper to be submitted soon
 
-*
+## Copyright (c) 2017
 
-## @copyright (c) 2017
+####  Amirhosein Afshinfard   <afshinfard (at) gmail.com>
 
-*
+####  Damoon Nashta-ali       <damoun_dna (at) yahoo.com>
 
-###      Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
-
-###                             <afshinfard (at) gmail.com>
-
-###     Damoon Nashta-ali       <damoun_dna (at) yahoo.com>
-
-###     Seyed Abolfazl Motahari <motahari (at) sharif.edu
+####  Seyed Abolfazl Motahari <motahari (at) sharif.edu>
 
