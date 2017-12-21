@@ -67,7 +67,7 @@ int numberOfThreads = 8;
 // ====
 int chunkSize = 25;
 // ==== Files:
-string readsFileName = "readsv2"; //string readsFileName = "reads_t1";    //string readName = "reads_k12.fq";
+string readsFileName = "readsv3"; //string readsFileName = "reads_t1";    //string readName = "reads_k12.fq";
 int readsFileCount = 2;
 string genomeName = "Chr19.fa"; //string genomeName = "E_coli_K12_DH10B.fa";    //string genomeName = "chr19.fa";
 //string indexName = "Chr19"; //string indexName = "E_coli_K12_DH10B";        //string indexName = "chr19";

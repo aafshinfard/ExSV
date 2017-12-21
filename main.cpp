@@ -17,6 +17,7 @@
 
 #include "Header.h"
 #include "ExtraTools.h"
+#include "WriteResults.h"
 #include "DataStructures.h"
 #include "SureMap.h"
 #include "LocalAligner.h"
@@ -65,12 +66,12 @@ long long readCounter = 0;
 long long genomeLength = 0;
 readMappingInfo globalRMI[MAXTHREADS];
 
-ofstream ofstre_rightEvents(rightEventsFileName.c_str());
-ofstream ofstre_leftEvents(leftEventsFileName.c_str());
-ofstream ofstr_Informatives(informativeFileName.c_str());
+ofstream ofstre_rightEvents;
+ofstream ofstre_leftEvents;
+ofstream ofstr_Informatives;
 
-ofstream ofstr_2Informatives(doubInformativeFileName.c_str());
-ofstream ofstr_unMapped(unMappedFileName.c_str());
+ofstream ofstr_2Informatives/*(doubInformativeFileName.c_str())*/;
+ofstream ofstr_unMapped;
 
 int shiftSteps = chunkSize / shiftIterations ;
 //                                 |
@@ -150,144 +151,6 @@ inline mapResult uniqueMap( string readChunk , string quality, int idx ){
     mappingTime += clock() - timer;
     return mapResult(ix.refPos,( ix.flag == 0 ? false : true ));
 
-}
-
-inline string getGenome(long long loci, long long length){
-    // [not yet]
-    if(loci + length > Ref.sz ){
-        cerr<<"\n=======\n=======\n=======\n exceeds genome length!\n=======\n=======\n=======\n";
-        return 0;
-    }
-    string genomeString;
-    for(long long i = 0 ; i < length ; i++ ){
-        genomeString += Ref.charAt(loci+i);
-    }
-    return genomeString;
-}
-
-int findCharacterPerRow(string genomeName) {
-    int characterPerRow;
-    ifstream ifstr(genomeName.c_str());
-    string line;
-    getline(ifstr, line);
-    getline(ifstr, line);
-    characterPerRow = (long)line.size();
-    ifstr.close();
-    return characterPerRow;
-}
-long long getGenomeLength(){
-
-    ifstream file((MAINADDRESS+genomeName).c_str(), ifstream::in | ifstream::binary);
-    if(!file.is_open())
-        return -1;
-
-    string line1;
-    getline(file,line1);
-    int line1Size = line1.size();
-
-    file.seekg(0, ios::end);
-    long long fileSize = file.tellg();
-    file.close();
-
-    fileSize = fileSize - line1Size - 1 - 1 ;/*the last line has no \n*/
-    long remainedLineCount = (fileSize)/81 ;
-    long long GenomeSize = fileSize - remainedLineCount;
-    return GenomeSize;
-}
-string getGenomeHDD(long long first, int length) {
-    // [Complete]
-    struct stat sb;
-    off_t len;
-    char *p;
-    int fd;
-    string name = genomeName;// + ".fasta";
-
-    getGenomeHDDMutex.lock();
-
-    ifstream ifstr(name.c_str());
-    string firstLine;
-    getline(ifstr, firstLine);
-    int firstLineCharCount = (int)firstLine.size();
-    ifstr.close();
-    first += firstLineCharCount+1 + first/characterPerRow;
-    fd = open(name.c_str(), O_RDONLY);
-    if (fd == -1)
-        perror ("open");
-
-    if (fstat (fd, &sb) == -1)
-        perror ("fstat");
-
-    p = (char *)mmap (0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
-
-    if (close (fd) == -1)
-        perror ("close");
-
-    string temp = "";
-    for (len = first; temp.size() < length; ){
-        if (p[len] != '\n')
-            temp += p[len];
-
-        ++len;
-    }
-    if (munmap (p, sb.st_size) == -1)
-        perror ("munmap");
-    //close(fd);
-    getGenomeHDDMutex.unlock();
-    return temp;
-}
-
-void write2Informatives( vector<informativeReadsData> *informativeReads/*, ofstream *ofstr1*/ ){
-    // [Complete]
-
-    //cerr<<"\n\n 2inf++ "<<informativeReads->size()<<endl;
-    cnt_2informatives += informativeReads->size();
-    for ( vector<informativeReadsData>::iterator it = informativeReads->begin() ; it < informativeReads->end(); it++){
-
-        for ( vector<solvedFragInfo>::iterator it2 = it->clusters.begin() ; it2 < it->clusters.end(); it2++){
-            (ofstr_2Informatives)<< (it->readName) <<"\t|\t"
-                     << (it2->startChunk)            <<  "\t"  <<  (it2->endChunk) <<  "\t"
-                     << (it2->isReverse ? "-1":"+1") <<  "\t"  <<  (it2->shift)    <<  "\t"
-                     << (it2->startPos)              <<  "\t"  <<  (it2->endPos)   <<  endl;
-        }
-    }
-
-}
-
-void writeInformatives( vector<informativeReadsData> *informativeReads/*, ofstream *ofstr1*/ ){
-    // [Complete]
-
-    //cerr<<"\n\n inf++ "<<informativeReads->size()<<endl;
-    cnt_informatives += informativeReads->size();
-    for ( vector<informativeReadsData>::iterator it = informativeReads->begin() ; it < informativeReads->end(); it++){
-
-        //ofstr1<< (it->readName) << endl;
-        //ofstr1<< (it->readSeq) << endl;
-
-        //style 1:
-        //        ofstr1<< (it->index) <<"\t|\t";
-        //        for ( vector<solvedFragInfo>::iterator it2 = it->clusters.begin() ; it2 != it->clusters.end(); ++it2)
-        //            ofstr1<< (it2->startChunk)            <<  "\t"  <<  (it2->endChunk) <<  "\t"
-        //                  << (it2->isReverse ? "-1","+1") <<  "\t"  <<  (it2->shift)    <<  "\t"
-        //                  << (it2->startPos)              <<  "\t"  <<  (it2->endPos)   <<  "\t|\t";
-        //        ofstr1<<endl;
-
-        //style 2:
-        for ( vector<solvedFragInfo>::iterator it2 = it->clusters.begin() ; it2 < it->clusters.end(); it2++){
-            (ofstr_Informatives)<< (it->readName) <<"\t|\t"
-                     << (it2->startChunk)            <<  "\t"  <<  (it2->endChunk) <<  "\t"
-                     << (it2->isReverse ? "-1":"+1") <<  "\t"  <<  (it2->shift)    <<  "\t"
-                     << (it2->startPos)              <<  "\t"  <<  (it2->endPos)   <<  endl;
-        }
-    }
-}
-
-void writeUnMapped( vector<unMappedReads>* unMappeds/*, ofstream *ofstr1*/ ){
-    // [Complete]
-    writeUnMappedMutex.lock();
-    cnt_unmapped += unMappeds->size();
-    for ( vector<unMappedReads>::iterator it = unMappeds->begin() ; it != unMappeds->end(); ++it)
-        (ofstr_unMapped)<< (it->name) <<"\n"<< (it->read) <<"\n"<< (it->quality) <<endl;
-    writeUnMappedMutex.unlock();
 }
 
 
@@ -633,17 +496,27 @@ void inline determineCheckStack( array<vector<bool>, MAX_SHIFT_ITER>* isSolvedCh
 }
 
 void buildUpEvents(){
-
+    vector<feasibleEvents> debug_rightE(rightE);
+    vector<feasibleEvents> debug_leftE(leftE);
     feasibleEvents tempRight;
     tempRight.informatives.push_back( informativeChunk("fake",0,0,0,0,0) );
     feasibleEvents tempLeft;
     tempLeft.informatives.push_back( informativeChunk("fake",0,0,0,0,0) );
 
     int depcntr = 0;
-
+    vector<informativeChunk> infos(informativeChunks);
     sort( informativeChunks.begin(), informativeChunks.end() );
+    sort( infos.begin(), infos.end() );
 
     for(vector<informativeChunk>::iterator it = informativeChunks.begin() ; it != informativeChunks.end(); ++it){
+        informativeChunk ttemp;
+        if(it->loci == 2758090 ){
+            ttemp = *it;
+        }
+
+        if(it->readName == "r2758129++430654^" || it->readName == "r2758136++291071^" || it->readName == "^r2758166++438208^" ){
+            ttemp = *it;
+        }
         if(it->bpIsRight){
             if( tempRight.informatives.back().loci + chunkSize >= it->loci ){
                 depcntr = 0;
@@ -659,7 +532,7 @@ void buildUpEvents(){
             }else{
                 //tempRight.informatives.erase( tempRight.informatives.begin() );
                 tempRight.start = tempRight.informatives[0].loci;
-                tempRight.end = tempRight.informatives.front().loci+chunkSize;
+                tempRight.end = tempRight.informatives.back().loci+chunkSize;
                 rightE.push_back(tempRight);
                 tempRight.informatives.clear();
                 tempRight.informatives.push_back( informativeChunk(*it) );
@@ -681,7 +554,7 @@ void buildUpEvents(){
             }else{
                 //tempLeft.informatives.erase( tempLeft.informatives.begin() );
                 tempLeft.start = tempLeft.informatives[0].loci;
-                tempLeft.end = tempLeft.informatives.front().loci+chunkSize;
+                tempLeft.end = tempLeft.informatives.back().loci+chunkSize;
                 leftE.push_back(tempLeft);
                 tempLeft.informatives.clear();
                 tempLeft.informatives.push_back( informativeChunk(*it) );
@@ -691,6 +564,8 @@ void buildUpEvents(){
     }
     cerr<<"\n # RightBP Events: "<<rightE.size()<<endl;
     cerr<<"\n # LeftBP Events: "<<leftE.size()<<endl;
+    vector<feasibleEvents> debug_rightE2(rightE);
+    vector<feasibleEvents> debug_leftE2(leftE);
     rightE.front().informatives.erase( rightE.front().informatives.begin() );
     if(rightE.front().informatives.size() == 0 )
         rightE.erase(rightE.begin());
@@ -698,16 +573,28 @@ void buildUpEvents(){
     if(leftE.front().informatives.size() == 0 )
         leftE.erase(leftE.begin());
     informativeChunks.clear();
+    vector<feasibleEvents> debug_rightE3(rightE);
+    vector<feasibleEvents> debug_leftE3(leftE);
+
+    int a;
 }
 void debbuildConnections(){
     vector<feasibleEvents> debug_rightE(rightE);
     vector<feasibleEvents> debug_leftE(leftE);
 
+
+    // r2758129++430654^
+    // r2758136++291071^
+    // r2758166++438208^
     for(vector<feasibleEvents>::iterator it = debug_rightE.begin() ;  it != debug_rightE.end(); ++it){
+        feasibleEvents tempor(*it);
+        if(it->start > 46000000)
+            cerr<<"are";
+        sort(tempor.informatives.begin(),tempor.informatives.end(),compConnected);
         sort(it->informatives.begin(), it->informatives.end(), compConnected);
         int index = 0 ;
         for( long long i = 0 ; i < debug_rightE.size(); i++ ){
-            while( !it->informatives[ index ].related_bpIsRight || !it->informatives[ index ].related_loci  )
+            while( (!it->informatives[ index ].related_bpIsRight) || (!it->informatives[ index ].related_loci)  )
                 if(++index >= it->informatives.size() )
                     break;
             if(index >= it->informatives.size() )
@@ -718,7 +605,7 @@ void debbuildConnections(){
                     it->informatives[ index ].related_loci <= debug_rightE[i].end ){
                 it->connectedEvents.push_back( connectedEvent(i,true,1) );
                 index++;
-                while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                while( (!it->informatives[ index ].related_bpIsRight) ||  (!it->informatives[ index ].related_loci) )
                     if(++index >= it->informatives.size() )
                         break;
                 if(index >= it->informatives.size() )
@@ -728,7 +615,7 @@ void debbuildConnections(){
                         it->informatives[ index ].related_loci <= debug_rightE[i].end ){
                     it->connectedEvents.back().weight++;
                     index++;
-                    while( ! it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                    while( (!it->informatives[ index ].related_bpIsRight) ||  (!it->informatives[ index ].related_loci) )
                         if(++index >= it->informatives.size() )
                             break;
                     if(index >= it->informatives.size() )
@@ -741,7 +628,7 @@ void debbuildConnections(){
         }
         index = 0 ;
         for( long long i = 0 ; i < debug_leftE.size(); i++ ){
-            while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+            while( (it->informatives[ index ].related_bpIsRight) ||  (!it->informatives[ index ].related_loci) )
                 if(++index >= it->informatives.size() )
                     break;
             if(index >= it->informatives.size() )
@@ -751,7 +638,7 @@ void debbuildConnections(){
                     it->informatives[ index ].related_loci <= debug_leftE[i].end ){
                 it->connectedEvents.push_back( connectedEvent(i,false,1) );
                 index++;
-                while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                while( (it->informatives[ index ].related_bpIsRight) ||  (!it->informatives[ index ].related_loci) )
                     if(++index >= it->informatives.size() )
                         break;
                 if(index >= it->informatives.size() )
@@ -761,7 +648,7 @@ void debbuildConnections(){
                         it->informatives[ index ].related_loci <= debug_leftE[i].end ){
                     it->connectedEvents.back().weight++;
                     index++;
-                    while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci)
+                    while( (it->informatives[ index ].related_bpIsRight) ||  (!it->informatives[ index ].related_loci))
                         if(++index >= it->informatives.size() )
                             break;
                     if(index >= it->informatives.size() )
@@ -773,10 +660,12 @@ void debbuildConnections(){
         }
     }
     for(vector<feasibleEvents>::iterator it = debug_leftE.begin() ;  it != debug_leftE.end(); ++it){
+        if(it->start > 46000000)
+            cerr<<"are";
         sort(it->informatives.begin(), it->informatives.end(), compConnected);
         int index = 0 ;
         for( long long i = 0 ; i < debug_rightE.size(); i++ ){
-            while( !it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+            while( (!it->informatives[ index ].related_bpIsRight) ||  (!it->informatives[ index ].related_loci) )
                 if(++index >= it->informatives.size() )
                     break;
             if(index >= it->informatives.size() )
@@ -796,7 +685,7 @@ void debbuildConnections(){
                         it->informatives[ index ].related_loci <= debug_rightE[i].end ){
                     it->connectedEvents.back().weight++;
                     index++;
-                    while( (!it->informatives[ index ].related_bpIsRight) ||  !it->informatives[ index ].related_loci )
+                    while( (!it->informatives[ index ].related_bpIsRight) ||  (!it->informatives[ index ].related_loci) )
                         if(++index >= it->informatives.size() )
                             break;
                     if(index >= it->informatives.size() )
@@ -808,17 +697,17 @@ void debbuildConnections(){
         }
         index = 0 ;
         for( long long i = 0 ; i < debug_leftE.size(); i++ ){
-            while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+            while( (it->informatives[ index ].related_bpIsRight) ||  (!it->informatives[ index ].related_loci) )
                 if(++index >= it->informatives.size() )
                     break;
             if(index >= it->informatives.size() )
                 break;
-            if( it->informatives[ index ].related_loci > debug_leftE[i].start
+            if( it->informatives[ index ].related_loci >= debug_leftE[i].start
                     &&
-                    it->informatives[ index ].related_loci < debug_leftE[i].end ){
+                    it->informatives[ index ].related_loci <= debug_leftE[i].end ){
                 it->connectedEvents.push_back( connectedEvent(i,false,1) );
                 index++;
-                while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                while( (it->informatives[ index ].related_bpIsRight) ||  (!it->informatives[ index ].related_loci) )
                     if(++index >= it->informatives.size() )
                         break;
                 if(index >= it->informatives.size() )
@@ -828,7 +717,7 @@ void debbuildConnections(){
                         it->informatives[ index ].related_loci <= debug_leftE[i].end ){
                     it->connectedEvents.back().weight++;
                     index++;
-                    while( it->informatives[ index ].related_bpIsRight ||  !it->informatives[ index ].related_loci )
+                    while( (it->informatives[ index ].related_bpIsRight) ||  (!it->informatives[ index ].related_loci) )
                         if(++index >= it->informatives.size() )
                             break;
                     if(index >= it->informatives.size() )
@@ -846,6 +735,10 @@ void debbuildConnections(){
 void buildConnections(){
     vector<feasibleEvents> debug_rightE(rightE);
     vector<feasibleEvents> debug_leftE(leftE);
+
+    // r2758129++430654^
+    // r2758136++291071^
+    // r2758166++438208^
 
     for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
         sort(it->informatives.begin(), it->informatives.end(), compConnected);
@@ -983,44 +876,51 @@ int overlapsMaxDepth(string which, long long start, long long end){
 }
 
 void writeEvents(){
+
     vector<feasibleEvents> debug_rightE(rightE);
     vector<feasibleEvents> debug_leftE(leftE);
 
-    ofstre_rightEvents<<"Start..\tEnd...\tMaxDepth\t#Informatives\t|\tConnections(index-weight-lef/right BP)"<<endl;
+    ofstre_rightEvents<<"#E\tStart..\tEnd...\tMaxDepth\t#Informatives\t|\tConnections(index-weight-lef/right BP)"<<endl<<"_____________________________________"<<endl;
+    int eveCntr = -1;
     for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
+        eveCntr++;
         if( (it->maxDepth + overlapsMaxDepth("left",it->start,it->end) > MINACCEVENTDEPTH) || it->connectedEvents.size() > 0 ){
-            ofstre_rightEvents<<it->start<<"\t"<<it->end<<"\t"<<it->maxDepth<<"\t"<<it->informatives.size()<<"\t|";
+            ofstre_rightEvents<<eveCntr<<":\t"<<it->start<<"\t"<<it->end<<"\t"<<it->maxDepth<<"\t"<<it->informatives.size()<<"\t|";
             for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ )
                 ofstre_rightEvents<<"\t"<<it->connectedEvents[i].index<<"\t"<<it->connectedEvents[i].weight<<"\t"<<(it->connectedEvents[i].isRightBP?"\-\> |":"\<\- |");
             ofstre_rightEvents<<endl;
-        }
-        bool writeReadNames = true;
-        if(writeReadNames){
-            ofstre_rightEvents<<"readNames:\n";
-            for(int i = 0 ; i < it->informatives.size() ; i++ ){
-                ofstre_rightEvents<<it->informatives[i].readName;
+            bool writeReadNames = true;
+            if(writeReadNames){
+                ofstre_rightEvents<<"readNames:\n";
+                for(int i = 0 ; i < it->informatives.size() ; i++ ){
+                    ofstre_rightEvents<<it->informatives[i].readName;
+                }
+                ofstre_rightEvents<<endl<<"_____________________________________"<<endl;
             }
-            ofstre_rightEvents<<endl;
         }
+
     }
-    ofstre_leftEvents<<"Start..\tEnd...\tMaxDepth\t#Informatives\t|\tConnections..."<<endl;
+    eveCntr = -1;
+    ofstre_leftEvents<<"#E\tStart..\tEnd...\tMaxDepth\t#Informatives\t|\tConnections(index-weight-lef/right BP)"<<endl<<"_____________________________________"<<endl;
     for(vector<feasibleEvents>::iterator it = leftE.begin() ;  it != leftE.end(); ++it){
+        eveCntr++;
         if( (it->maxDepth + overlapsMaxDepth("right",it->start,it->end) > MINACCEVENTDEPTH) || it->connectedEvents.size() > 0 ){
             int aaa = overlapsMaxDepth("right",it->start,it->end);
-            cerr<<it->maxDepth<<" "<<overlapsMaxDepth("right",it->start,it->end)<<" "<<it->start<<" "<< it->end <<endl;
-            ofstre_leftEvents<<it->start<<"\t"<<it->end<<"\t"<<it->maxDepth<<"\t"<<it->informatives.size()<<"\t|";
+            //cerr<<it->maxDepth<<" "<<overlapsMaxDepth("right",it->start,it->end)<<" "<<it->start<<" "<< it->end <<endl;
+            ofstre_leftEvents<<eveCntr<<":\t"<<it->start<<"\t"<<it->end<<"\t"<<it->maxDepth<<"\t"<<it->informatives.size()<<"\t|";
             for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ )
                 ofstre_leftEvents<<"\t"<<it->connectedEvents[i].index<<"\t"<<it->connectedEvents[i].weight<<"\t"<<(it->connectedEvents[i].isRightBP?"\-\> |":"\<\- |");
             ofstre_leftEvents<<endl;
-        }
-        bool writeReadNames = true;
-        if(writeReadNames){
-            ofstre_leftEvents<<"readNames:\n";
-            for(int i = 0 ; i < it->informatives.size() ; i++ ){
-                ofstre_leftEvents<<it->informatives[i].readName;
+            bool writeReadNames = true;
+            if(writeReadNames){
+                ofstre_leftEvents<<"readNames:\n";
+                for(int i = 0 ; i < it->informatives.size() ; i++ ){
+                    ofstre_leftEvents<<it->informatives[i].readName;
+                }
+                ofstre_leftEvents<<endl<<"_____________________________________"<<endl;
             }
-            ofstre_leftEvents<<endl;
         }
+
     }
     ofstre_rightEvents.close();
     ofstre_leftEvents.close();
@@ -1120,7 +1020,7 @@ void processing( long long* readIndex ,string* readsName ,string* reads ,string 
                         informativeChunks.push_back( informativeChunk(readsName[i], clusters[t].startPos, clusters[t].isReverse,
                                                                       (t > 0), (t > 0 ?clusters[t-1].endPos:0), (t>0?!clusters[t-1].isReverse:false)  ) );
                     if(clusters[t].endChunk != terminal )
-                        informativeChunks.push_back( informativeChunk(readsName[i], clusters[t].startPos, !clusters[t].isReverse,
+                        informativeChunks.push_back( informativeChunk(readsName[i], clusters[t].endPos, !clusters[t].isReverse,
                                                                       (t < clusters.size()-1 ), (t < clusters.size()-1 ?clusters[t+1].startPos:0),
                                                                       (t<clusters.size()-1?clusters[t+1].isReverse:false)  ) );
                 }
@@ -1383,6 +1283,8 @@ int main(int argc, char *argv[]){
         }
         //cerr<<currentFileName<<endl;
         ifstream ifstr(currentFileName.c_str());
+        ofstr_Informatives.open(informativeFileName.c_str());
+        ofstr_unMapped.open(unMappedFileName.c_str());
 
         int *ids;
         ids = new int[numberOfThreads];
@@ -1425,7 +1327,7 @@ int main(int argc, char *argv[]){
     if(runPhase2){
         if(!runPhase1){
             // load from file
-            string a = informativeFullyFileName.c_str();
+            //string a = informativeFullyFileName.c_str();
             ifstream indata(informativeFullyFileName.c_str());
 
             informativeChunk pr;
@@ -1436,7 +1338,7 @@ int main(int argc, char *argv[]){
                 std::cout << pr;
             }
         }
-        vector<informativeChunk> infos(informativeChunks);
+        //vector<informativeChunk> infos(informativeChunks);
         cerr<<"\n Phase2 Started...";
         buildUpEvents();
         cerr<<"\n Events has been Built...";
@@ -1449,6 +1351,9 @@ int main(int argc, char *argv[]){
         //filterEvents();
         //buildEventGraph();
         cerr<<"\n Writing to File...\n";
+        ofstre_rightEvents.open(rightEventsFileName.c_str());
+        ofstre_leftEvents.open(leftEventsFileName.c_str());
+
         writeEvents();
     }
     cerr<<"\n Finished...\n";
