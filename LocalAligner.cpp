@@ -15,6 +15,7 @@
 
 #include "LocalAligner.h"
 using namespace std;
+
 LocalAligner::LocalAligner(std::string seqA, std::string seqB, int gapPen, int misPen, int matchPen, int shift, int k)
 {
     this->MATCH = matchPen;

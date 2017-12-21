@@ -203,10 +203,10 @@ inline int ifAlignable( long long startLoci, string readSegment, bool isReverse,
 long extendManager(long from, long until, string* read, solvedFragInfo* anchorExtendResult){
     // [Completed] FUNC aim:
     // to extend from from's neighbour (not from from itself) to until
-    // from < until not guaranteed! based n diretion it's feasible and return number of last extended chunk
+    // from < until not guaranteed! based on diretion it is feasible and returns number of lastly extended chunks
     if(from == until)
         return from;
-    long long startLoci = (from > until ? anchorExtendResult->startPos :anchorExtendResult->endPos);
+    long long startLoci = (from > until ? anchorExtendResult->startPos : anchorExtendResult->endPos);
     int direction = (from > until ? -1 : +1);    
     bool isReverse = anchorExtendResult->isReverse;
 
@@ -281,7 +281,7 @@ void allFragsExtension( string* read, vector<solvedFragInfo>* clusters, int idx 
     }
     for( int i = 1 ; i < clusters->size() ; i++ ){
         if(clusters->at(i-1).endChunk > clusters->at(i).startChunk){
-            cerr<<"\n baha'e"<<endl;
+            cerr<<"\n baha'"<<endl;
             continue;
         }
         extendManager( clusters->at(i-1).endChunk ,clusters->at(i).startChunk-1 ,read ,clusters->data()+i-1 );
@@ -459,9 +459,13 @@ interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack 
     // not yet
     if(inClustersExtension){
         // to find in-place balanced structual variations or in aggregation balancer SVs in lng reads...
-        if(BGChangesOnAnchor){
+        // extendManager(long from, long until, string* read, solvedFragInfo* anchorExtendResult)
+        if(){
 
         }
+        //        if(BGChangesOnAnchor){
+
+        //        }
     }
     //2.a: outExtend left
     //    if(anchoredInterval.start != toCheck.start ){
