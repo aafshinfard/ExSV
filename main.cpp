@@ -877,19 +877,22 @@ void writeGraphData(){
     int eveCntr = -1;
     for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
         eveCntr++;
-        nodeLocation[0][eveCntr] = it->start;
+        nodeLocation[0][eveCntr] = (it->start+it->end)/2;
         nodeLocation[1][eveCntr] = 1;
-        for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ ){
-            adjacencyMatrix[eveCntr][] = ;
+        nodeWeight[eveCntr] = it->informatives.size();
+        for(int i = 0 ; i < it->connectedEvents.size() ; i++ ){
+            adjacencyMatrix[eveCntr][it->connectedEvents[i].index+(it->connectedEvents[i].isRightBP?0:rightCount)]
+                    += it->connectedEvents[i].weight ;
         }
     }
-
     for(vector<feasibleEvents>::iterator it = leftE.begin() ;  it != leftE.end(); ++it){
         eveCntr++;
-        nodeLocation[0][eveCntr] = it->start;
+        nodeLocation[0][eveCntr] = (it->start+it->end)/2;
         nodeLocation[1][eveCntr] = 2;
-        for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ ){
-            adjacencyMatrix[eveCntr][] = ;
+        nodeWeight[eveCntr] = it->informatives.size();
+        for(int i = 0 ; i < it->connectedEvents.size() ; i++ ){
+            adjacencyMatrix[eveCntr][it->connectedEvents[i].index+(it->connectedEvents[i].isRightBP?0:rightCount)]
+                    += it->connectedEvents[i].weight;
         }
     }
 
