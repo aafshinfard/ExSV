@@ -7,6 +7,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <fstream>
+#include "DataStructures.h"
 
 
 void write2Informatives( vector<informativeReadsData> *informativeReads/*, ofstream *ofstr1*/ ){

@@ -19,7 +19,7 @@
 #include "ExtraTools.h"
 #include "WriteResults.h"
 #include "DataStructures.h"
-#include "SureMap.h"
+//#include "SureMap.h"
 #include "LocalAligner.h"
 
 
@@ -43,35 +43,14 @@ clock_t extensionTime = 0;
 long long connectedCntr = 0;
 
 
-int characterPerRow;
-long long rdcntr = 0;
-long long kcntr = 0;
-int fileCounter = 1; // to remember current active file
-long long cnt_2informatives = 0;
-long long cnt_informatives = 0;
-long long cnt_unmapped = 0;
 
-std::mutex rdcntrMutex;
-std::mutex readFileMutex;
-std::mutex getGenomeHDDMutex;
-std::mutex informativeChunksMutex;
-std::mutex writeInformativesMutex;
-std::mutex write2InformativesMutex;
-std::mutex writeUnMappedMutex;
-std::mutex bGRChangeMutex;
-std::mutex bGLChangeMutex;
 
 long long totalReads = 0;
 long long readCounter = 0;
 long long genomeLength = 0;
 readMappingInfo globalRMI[MAXTHREADS];
 
-ofstream ofstre_rightEvents;
-ofstream ofstre_leftEvents;
-ofstream ofstr_Informatives;
 
-ofstream ofstr_2Informatives/*(doubInformativeFileName.c_str())*/;
-ofstream ofstr_unMapped;
 
 int shiftSteps = chunkSize / shiftIterations ;
 //                                 |
@@ -441,7 +420,7 @@ interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack 
         }
     }
     // ========================
-    // Recursivley Check sides:
+    // Recursivley Check Sides:
     if( !isAnchored ){
         interval tempa = interval(toCheck.start,toCheck.start+half-(1) );
         if( abs(tempa.start - tempa.end) > 0 )
@@ -457,10 +436,10 @@ interval anchorAndExtend(string* read ,string* qc ,vector<interval>* checkStack 
     // Extend if Possible: (only to check intervals)
     //1: inExtend
     // not yet
-    if(inClustersExtension){
+    if( inClustersExtension ){
         // to find in-place balanced structual variations or in aggregation balancer SVs in lng reads...
         // extendManager(long from, long until, string* read, solvedFragInfo* anchorExtendResult)
-        if(){
+        if( false ){
 
         }
         //        if(BGChangesOnAnchor){
@@ -877,6 +856,20 @@ int overlapsMaxDepth(string which, long long start, long long end){
         }
     }
     return overlaps;
+}
+void writeGraphData(){
+//    int eveCntr = -1;
+//    int adjacencyMatrix;
+//    int nodeLocation[2];
+//    int nodeWeight;
+//    for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
+
+//    }
+
+//    for(vector<feasibleEvents>::iterator it = leftE.begin() ;  it != leftE.end(); ++it){
+
+//    }
+
 }
 
 void writeEvents(){
@@ -1359,6 +1352,7 @@ int main(int argc, char *argv[]){
         ofstre_leftEvents.open(leftEventsFileName.c_str());
 
         writeEvents();
+        writeGraphData();
     }
     cerr<<"\n Finished...\n";
     return a.exec();
