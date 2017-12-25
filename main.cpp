@@ -868,16 +868,29 @@ void writeGraphData(){
     int *nodeLocation[2];
     for(int i = 0; i < 2; ++i)
         nodeLocation[i] = new int[nodeCount];
+    for(int i = 0; i < 2; ++i)
+        for(int j = 0; j < nodeCount; ++j)
+            nodeLocation[i][j] = 0;
 
     int *nodeWeight = new int[nodeCount];
 
     int eveCntr = -1;
     for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
-
+        eveCntr++;
+        nodeLocation[0][eveCntr] = it->start;
+        nodeLocation[1][eveCntr] = 1;
+        for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ ){
+            adjacencyMatrix[eveCntr][] = ;
+        }
     }
 
     for(vector<feasibleEvents>::iterator it = leftE.begin() ;  it != leftE.end(); ++it){
-
+        eveCntr++;
+        nodeLocation[0][eveCntr] = it->start;
+        nodeLocation[1][eveCntr] = 2;
+        for(int i = 0 ; i < (it->connectedEvents.size()<3?it->connectedEvents.size():3) ; i++ ){
+            adjacencyMatrix[eveCntr][] = ;
+        }
     }
 
 }
