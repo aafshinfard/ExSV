@@ -858,17 +858,27 @@ int overlapsMaxDepth(string which, long long start, long long end){
     return overlaps;
 }
 void writeGraphData(){
-//    int eveCntr = -1;
-//    int adjacencyMatrix;
-//    int nodeLocation[2];
-//    int nodeWeight;
-//    for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
+    int rightCount = rightE.size();
+    int nodeCount = rightCount + leftE.size();
 
-//    }
+    int** adjacencyMatrix = new int*[nodeCount];
+    for(int i = 0; i < nodeCount; ++i)
+        adjacencyMatrix[i] = new int[nodeCount];
 
-//    for(vector<feasibleEvents>::iterator it = leftE.begin() ;  it != leftE.end(); ++it){
+    int *nodeLocation[2];
+    for(int i = 0; i < 2; ++i)
+        nodeLocation[i] = new int[nodeCount];
 
-//    }
+    int *nodeWeight = new int[nodeCount];
+
+    int eveCntr = -1;
+    for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
+
+    }
+
+    for(vector<feasibleEvents>::iterator it = leftE.begin() ;  it != leftE.end(); ++it){
+
+    }
 
 }
 
@@ -895,7 +905,6 @@ void writeEvents(){
                 ofstre_rightEvents<<endl<<"_____________________________________"<<endl;
             }
         }
-
     }
     eveCntr = -1;
     ofstre_leftEvents<<"#E\tStart..\tEnd...\tMaxDepth\t#Informatives\t|\tConnections(index-weight-lef/right BP)"<<endl<<"_____________________________________"<<endl;
