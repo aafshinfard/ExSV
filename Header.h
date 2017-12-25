@@ -58,7 +58,7 @@ using namespace std;
 #define MAXREADSIZE 5000
 #define MAX_SHIFT_ITER 5
 #define WRITEWHEN 100
-#define MINACCEVENTDEPTH 0
+#define MINACCEVENTDEPTH 2
 #define MAINADDRESS "/home/ameer/ExactSV/"
 //#define BUFFERSIZE 1024*1024    // Size of fread Buffer
 //#define MAX_BUFFER_SIZE 100     // each thread will read MAX_BUFFER_SIZE reads in each trial
@@ -146,5 +146,21 @@ long long cntCOM = 0, cntBG=0;
 // ================================|
 // ================================'
 
+
+
+int characterPerRow;
+long long rdcntr = 0;
+long long kcntr = 0;
+int fileCounter = 1; // to remember current active file
+long long cnt_2informatives = 0;
+long long cnt_informatives = 0;
+long long cnt_unmapped = 0;
+
+ofstream ofstre_rightEvents;
+ofstream ofstre_leftEvents;
+ofstream ofstr_Informatives;
+
+ofstream ofstr_2Informatives/*(doubInformativeFileName.c_str())*/;
+ofstream ofstr_unMapped;
 
 #endif // HEADER_H

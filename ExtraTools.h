@@ -16,9 +16,28 @@
 #ifndef EXTRATOOLS_H
 #define EXTRATOOLS_H
 
-
+#include "Header.h"
+#include "SureMap.h"
 #include <string>
 using namespace std;
+
+
+
+// /////////////////////////////////////////////////
+/// \brief revComplemACGT
+/// \param readSegment
+/// \return
+///
+///
+std::mutex rdcntrMutex;
+std::mutex readFileMutex;
+std::mutex getGenomeHDDMutex;
+std::mutex informativeChunksMutex;
+std::mutex writeInformativesMutex;
+std::mutex write2InformativesMutex;
+std::mutex writeUnMappedMutex;
+std::mutex bGRChangeMutex;
+std::mutex bGLChangeMutex;
 
 inline string revComplemACGT(string readSegment){
     // [Completed]
