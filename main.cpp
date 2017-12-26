@@ -916,7 +916,8 @@ void graphData(){
         for(int j = 0; j < nodeCount; ++j)
             if(adjacencyMatrix[i][j] != 0){
                 a = adjacencyMatrix[i][j];
-                ofstre_graphData<<"("<<i<<","<<j<<"):"<<adjacencyMatrix[i][j]<<"\n";
+                ofstre_graphData<<i<<"\t"<<j<<"\t"<<adjacencyMatrix[i][j]<<"\n";
+                //ofstre_graphData<<"("<<i<<","<<j<<"):"<<adjacencyMatrix[i][j]<<"\n";
 
             }
             else
@@ -924,14 +925,11 @@ void graphData(){
         //ofstre_graphData<<"|||\n";
     }
 
-    for(int i = 0; i < 2; ++i){
-        for(int j = 0; j < nodeCount; ++j)
-            ofstre_graphData2<<nodeLocation[i][j]<<"\t";
-        ofstre_graphData2<<endl;
-    }
+    for(int j = 0; j < nodeCount; ++j)
+        ofstre_graphData2<<nodeLocation[0][j]<<"\t"<<nodeLocation[1][j]<<endl;
 
     for(int j = 0; j < nodeCount; ++j)
-        ofstre_graphData3<<nodeWeight[j]<<"\t";
+        ofstre_graphData3<<nodeWeight[j]<<"\n";
 
     ofstre_graphData.close();
     ofstre_graphData2.close();
