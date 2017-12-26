@@ -33,6 +33,7 @@ install.packages("network")
 install.packages("sna")
 install.packages("devtools")
 devtools::install_github("briatte/ggnet")
+
 library(ggnet)
 library(network)
 library(sna)
@@ -40,9 +41,26 @@ library(ggplot2)
 
 net = network(adjaMatrix,directed = FALSE,ignore.eval = FALSE,names.eval = "weights")
 network.vertex.names(net) = as.character(1:10000)
+
+ggnet2(net, node.size = 5,label = as.character(as.matrix(nodeWeights)),
+       label.color = "black",edge.label = "weights",edge.label.color = "darkred", edge.size = 1,
+       edge.color = "black",node.color = "grey")
+
+
 net %v% "x" = nodeLoci[,1]
-net %v% "y" = nodeLoci[,2]
-ggnet2(net, node.size = 5, mode = c("x", "y"),label = as.character(as.matrix(nodeWeights)), label.color = "black",edge.label = "weights",edge.label.color = "darkred", edge.size = 1, edge.color = "grey",node.color = "grey")
+net %v% "y" = as.numeric(as.matrix((runif(length(nodeLoci[,2]))/5)-0.1))
+
+ggnet2(net, node.size = 5, mode = c("x", "y"),label = as.character(as.matrix(nodeWeights)),
+       label.color = "black",edge.label = "weights",edge.label.color = "darkred", edge.size = 1,
+       edge.color = "black",node.color = "grey")
+
+
+net %v% "x" = nodeLoci[,1]
+net %v% "y" = as.numeric(nodeLoci[,2]+as.matrix((runif(length(nodeLoci[,2]))/5)-0.1))
+
+ggnet2(net, node.size = 5, mode = c("x", "y"),label = as.character(as.matrix(nodeWeights)),
+       label.color = "black",edge.label = "weights",edge.label.color = "darkred", edge.size = 1,
+       edge.color = "black",node.color = "grey")
 
 
 dev.off()
