@@ -10,7 +10,7 @@ library(igraph)
 dev.off()
 
 sparseMatrix = read.table("/home/ameer/ExactSV/SV_out/graphData",sep = "\t",col.names=c("row","col","Weight"));
-sparseMatrix
+#sparseMatrix[,1:2]=sparseMatrix[,1:2]+1
 nodeLoci = read.table("/home/ameer/ExactSV/SV_out/graphData2",sep = "\t",col.names=c("X","Y"));
 nodeLoci
 nodeWeights = read.table("/home/ameer/ExactSV/SV_out/graphData3",sep = "\t",col.names=c("Weight"));
@@ -20,17 +20,6 @@ graphDim = dim(nodeWeights)[1]
 adjaMatrix = matrix(0,graphDim,graphDim)
 adjaMatrix[as.matrix(sparseMatrix[,1:2])]=sparseMatrix[,3]
 sum(as.logical(adjaMatrix))
-
-gr <- graph_from_adjacency_matrix(adjaMatrix, mode = c("", "undirected",
-                                                "max", "min", "upper", "lower", "plus"), weighted = TRUE, diag = TRUE,
-                            add.colnames = NULL, add.rownames = NA)
-gr <- graph_from_adjacency_matrix(adjaMatrix,weighted = TRUE,mode = "undirected",diag = TRUE)
-E(gr)
-plot(gr)
-
-aM = as.data.frame(adjaMatrix)
-plot(aM$index)
-from_adjacency
 
 #####################################################################################################
 #####################################################################################################
@@ -50,7 +39,7 @@ net = network(adjaMatrix,directed = FALSE,ignore.eval = FALSE,names.eval = "weig
 network.vertex.names(net) = as.character(1:10000)
 net %v% "x" = nodeLoci[,1]
 net %v% "y" = nodeLoci[,2]
-ggnet2(net, node.size = 5, mode = c("x", "y"),label = as.character(as.matrix(nodeWeights)), label.color = "grey",edge.label = "weights",edge.label.color = "darkred", edge.size = 1, edge.color = "grey",node.color = "black")
+ggnet2(net, node.size = 5, mode = c("x", "y"),label = as.character(as.matrix(nodeWeights)), label.color = "black",edge.label = "weights",edge.label.color = "darkred", edge.size = 1, edge.color = "grey",node.color = "grey")
 
 
 dev.off()

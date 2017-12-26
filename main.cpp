@@ -1,17 +1,17 @@
 /**
  * @file    main.cpp
- * @author  Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
- *                                  <afshinfard (at) gmail.com>
+ * @author  Amirhosein Afshinfard   <afshinfard(at)ce(.)sharif(.)edu>
+ *                                  <afshinfard(at)gmail(.)com>
  *          Bioinformatics Research Lab - Sharif Uiversity of Technology
  *
  * @cite
  *
  * @copyright (c) 2017
  *
- *      Amirhosein Afshinfard   <afshinfard (at) ce.sharif.edu>
- *                              <a.afshinfard (at) gmail.com>
- *      Damoon Nashta-ali       <damoun_dna (at) yahoo.com>
- *      Seyed Abolfazl Motahari <motahari (at) sharif.edu
+ *      Amirhosein Afshinfard   <afshinfard(at)ce (.)sharif(.)edu>
+ *                              <afshinfard(at)gmail(.)com>
+ *      Damoon Nashta-ali       <damoun_dna(at)yahoo(.)com>
+ *      Seyed Abolfazl Motahari <motahari(at)sharif(.)edu>
  *
  **/
 
@@ -21,7 +21,6 @@
 #include "DataStructures.h"
 //#include "SureMap.h"
 #include "LocalAligner.h"
-
 
 // ================================|
 //> Global Vars:                   |
@@ -916,7 +915,7 @@ void graphData(){
         for(int j = 0; j < nodeCount; ++j)
             if(adjacencyMatrix[i][j] != 0){
                 a = adjacencyMatrix[i][j];
-                ofstre_graphData<<i<<"\t"<<j<<"\t"<<adjacencyMatrix[i][j]<<"\n";
+                ofstre_graphData<<(i+1)<<"\t"<<(j+1)<<"\t"<<adjacencyMatrix[i][j]<<"\n";
                 //ofstre_graphData<<"("<<i<<","<<j<<"):"<<adjacencyMatrix[i][j]<<"\n";
 
             }
