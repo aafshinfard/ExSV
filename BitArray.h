@@ -1,6 +1,6 @@
 /**
  * @file    src/BitArray.h
- * @author  MohammadJavad Rezaei Seraji <mjrezaei (at) ce.sharif.edu>
+ * @author  MohammadJavad Rezaei Seraji <mjrezaei (at) ce (.) sharif (.) edu>
  *
  * @section LICENCE
  *

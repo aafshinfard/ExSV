@@ -1,6 +1,6 @@
 /**
  * @file    BWT2.h
- * @author  MohammadJavad Rezaei Seraji <mjrezaei (at) ce.sharif.edu>
+ * @author  MohammadJavad Rezaei Seraji <mjrezaei (at) ce (.) sharif (.) edu>
  *
  * @section LICENCE
  *
