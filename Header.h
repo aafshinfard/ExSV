@@ -74,6 +74,9 @@ string genomeName = "Chr19.fa"; //string genomeName = "E_coli_K12_DH10B.fa";    
 //string indexName = "Chr19"; //string indexName = "E_coli_K12_DH10B";        //string indexName = "chr19";
 string outputDir = "/home/ameer/ExactSV/SV_out/";
 
+string graphDataFileName = outputDir+"graphData";
+string graphDataFileName2 = outputDir+"graphData2";
+string graphDataFileName3 = outputDir+"graphData3";
 string rightEventsFileName = outputDir+"rightEvents";
 string leftEventsFileName = outputDir+"leftEvents";
 string informativeFileName = outputDir+"informatives";
@@ -157,6 +160,9 @@ long long cnt_informatives = 0;
 long long cnt_unmapped = 0;
 
 ofstream ofstre_rightEvents;
+ofstream ofstre_graphData;
+ofstream ofstre_graphData2;
+ofstream ofstre_graphData3;
 ofstream ofstre_leftEvents;
 ofstream ofstr_Informatives;
 
