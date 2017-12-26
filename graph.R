@@ -5,6 +5,11 @@
 #====================================================================
 ## read data
 library(igraph)
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 5e7bf2f71818386c65a6e73cd252a10aca92b1d5
 dev.off()
 
 sparseMatrix = read.table("/home/ameer/ExactSV/SV_out/graphData",sep = "\t",col.names=c("row","col","Weight"));
