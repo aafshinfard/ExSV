@@ -716,6 +716,7 @@ void debbuildConnections(){
 
 }
 void buildConnections(){
+
     vector<feasibleEvents> debug_rightE(rightE);
     vector<feasibleEvents> debug_leftE(leftE);
 
@@ -857,13 +858,24 @@ int overlapsMaxDepth(string which, long long start, long long end){
     }
     return overlaps;
 }
-void writeGraphData(){
+void graphData(){
+
+    vector<feasibleEvents> debug_rightE(rightE);
+    vector<feasibleEvents> debug_leftE(leftE);
+
+    // //////////////////////////////////////////////
+    // /////////        Build Graph         /////////
+
     int rightCount = rightE.size();
     int nodeCount = rightCount + leftE.size();
 
     int** adjacencyMatrix = new int*[nodeCount];
     for(int i = 0; i < nodeCount; ++i)
         adjacencyMatrix[i] = new int[nodeCount];
+
+    for(int i = 0; i < nodeCount; ++i)
+        for(int j = 0; j < nodeCount; ++j)
+            adjacencyMatrix[i][j]=0;
 
     int *nodeLocation[2];
     for(int i = 0; i < 2; ++i)
@@ -877,7 +889,7 @@ void writeGraphData(){
     int eveCntr = -1;
     for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
         eveCntr++;
-        nodeLocation[0][eveCntr] = (it->start+it->end)/2;
+        nodeLocation[0][eveCntr] = ((it->start)+(it->end))/2;
         nodeLocation[1][eveCntr] = 1;
         nodeWeight[eveCntr] = it->informatives.size();
         for(int i = 0 ; i < it->connectedEvents.size() ; i++ ){
@@ -891,12 +903,44 @@ void writeGraphData(){
         nodeLocation[1][eveCntr] = 2;
         nodeWeight[eveCntr] = it->informatives.size();
         for(int i = 0 ; i < it->connectedEvents.size() ; i++ ){
-            adjacencyMatrix[eveCntr][it->connectedEvents[i].index+(it->connectedEvents[i].isRightBP?0:rightCount)]
+            adjacencyMatrix[eveCntr][(it->connectedEvents[i].index)+(it->connectedEvents[i].isRightBP?0:rightCount)]
                     += it->connectedEvents[i].weight;
         }
     }
 
+    // //////////////////////////////////////////////
+    // /////////        Write Graph         /////////
+
+    int a;
+    for(int i = 0; i < nodeCount; ++i){
+        for(int j = 0; j < nodeCount; ++j)
+            if(adjacencyMatrix[i][j] != 0){
+                a = adjacencyMatrix[i][j];
+                ofstre_graphData<<"("<<i<<","<<j<<"):"<<adjacencyMatrix[i][j]<<"\n";
+
+            }
+            else
+                ;//ofstre_graphData<<"-"<<"|";
+        //ofstre_graphData<<"|||\n";
+    }
+
+    for(int i = 0; i < 2; ++i){
+        for(int j = 0; j < nodeCount; ++j)
+            ofstre_graphData2<<nodeLocation[i][j]<<"\t";
+        ofstre_graphData2<<endl;
+    }
+
+    for(int j = 0; j < nodeCount; ++j)
+        ofstre_graphData3<<nodeWeight[j]<<"\t";
+
+    ofstre_graphData.close();
+    ofstre_graphData2.close();
+    ofstre_graphData3.close();
+    // //////////////////////////////////////////////
+    // /////////       Motif Finding        /////////
+
 }
+
 
 void writeEvents(){
 
@@ -1373,11 +1417,14 @@ int main(int argc, char *argv[]){
         //filterEvents();
         //buildEventGraph();
         cerr<<"\n Writing to File...\n";
+        ofstre_graphData.open(graphDataFileName.c_str());
+        ofstre_graphData2.open(graphDataFileName2.c_str());
+        ofstre_graphData3.open(graphDataFileName3.c_str());
         ofstre_rightEvents.open(rightEventsFileName.c_str());
         ofstre_leftEvents.open(leftEventsFileName.c_str());
 
         writeEvents();
-        writeGraphData();
+        graphData();
     }
     cerr<<"\n Finished...\n";
     return a.exec();
