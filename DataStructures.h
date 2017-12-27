@@ -19,6 +19,10 @@
 #ifndef DATASTRUCTURES_H
 #define DATASTRUCTURES_H
 #include <cstdint>
+#include <iostream>
+#include <vector>
+#include <map>
+#include <string>
 
 struct informativeChunk{
     string readName = "";
@@ -195,5 +199,76 @@ struct singleBowtied{
     singleBowtied(long long rI, int fN, long long s, int f):readIndex(rI),fragNum(fN),snap(s),flag(f){}
 };
 // usage : singleUniqes[ stoll(tokens[0])-1 ].push_back( singleBowtied(stoll(tokens[0]) , stoi(tokens[1]) , stoll(tokens[2]) , stoi(tokens[3]) ) );
+
+
+// ////////////////////////////
+// //////////////////    Graph
+
+struct vertex {
+    typedef pair<int, vertex*> ve;
+    vector<ve> adj; //cost of edge, destination vertex
+    string name;
+    long long start;
+    long long end;
+    int depth;
+    bool isRight;
+    vertex(string n, long long s, long long e, int dep, bool isR) : name(n),start(s), end(e), depth(dep), isRight(isR) {}
+};
+
+class graph
+{
+public:
+    typedef map<string, vertex *> vmap;
+    vmap work;
+    void addvertex(const string&, long long s, long long e, int dep, bool isR);
+    void addedge(const string& from, const string& to, double cost);
+    void addPrimeEdge(const string& from, const string& to);
+    void overlappedConnector();
+};
+
+void graph::addvertex(const string &name, long long s, long long e, int dep, bool isR)
+{
+    vmap::iterator itr = work.find(name);
+    if (itr == work.end())
+    {
+        vertex *v;
+        v = new vertex(name,s,e,dep,isR);
+        work[name] = v;
+        return;
+    }
+    cout << "\nVertex already exists!";
+}
+
+void graph::addedge(const string& from, const string& to, double cost)
+{
+    vertex *f = (work.find(from)->second);
+    vertex *t = (work.find(to)->second);
+    pair<int, vertex *> edge = make_pair(cost, t);
+    f->adj.push_back(edge);
+}
+void graph::addPrimeEdge(const string& from, const string& to)
+{
+    vertex *f = (work.find(from)->second);
+    vertex *t = (work.find(to)->second);
+    pair<int, vertex *> edge = make_pair(-1, t);
+    f->adj.push_back(edge);
+}
+void graph::overlappedConnector(){
+    for(vmap::iterator itr = work.begin() ; itr != work.end() ; itr++){
+        for(vmap::iterator itr2 = work.begin() ; itr2 != work.end() ; itr2++){
+            if(itr != itr2){
+                vertex *f = (work.find(from)->second);
+                vertex *t = (work.find(to)->second);
+                if( (f->start > t->start && f->start < t->end ) ||
+                        (f->end > t->start && f->end < t->end )){
+                    addPrimeEdge(f->name,t->name);
+                }
+            }
+        }
+    }
+}
+
+
+
 
 #endif // DATASTRUCTURES_H

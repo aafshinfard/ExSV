@@ -933,6 +933,11 @@ void graphData(){
     ofstre_graphData.close();
     ofstre_graphData2.close();
     ofstre_graphData3.close();
+
+    // //////////////////////////////////////////////////////////////////
+    // /////////        Build Graph with adjacency lisyt        /////////
+    graph a;
+
     // //////////////////////////////////////////////
     // /////////       Motif Finding        /////////
 
