@@ -940,7 +940,10 @@ void graphData(){
 
     // //////////////////////////////////////////////////////////////////
     // /////////        Build Graph with adjacency list        /////////
-    graph a;
+    graph AdjaList;
+    AdjaList.buildFromMatrices( adjacencyMatrix, nodeCount, nodeWeight, nodeLocation, node_BPIsRight);
+    AdjaList.overlappedConnector();
+
 
     // //////////////////////////////////////////////
     // /////////       Motif Finding        /////////

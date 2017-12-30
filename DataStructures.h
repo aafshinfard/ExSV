@@ -221,7 +221,8 @@ public:
     typedef map<string, vertex *> vmap;
     vmap work;
     void addVertex(const string&, long long s, long long e, int dep, bool isR);
-    void addedge(const string& from, const string& to, double cost);
+    void addEdge(const string& from, const string& to, double cost);
+    void buildFromMatrices(int** adjacencyMatrix, int nodeCount, int *nodeWeight, int *nodeLocation[2], bool *node_BPIsRight );
     void addPrimeEdge(const string& from, const string& to);
     void overlappedConnector();
 };
@@ -239,53 +240,24 @@ void graph::addVertex(const string &name, long long s, long long e, int dep, boo
     cout << "\nVertex already exists!";
 }
 
-void graph::buildFromMatrices(int** adjacencyMatrix, int nodeCount, int *nodeWeight, int *nodeLocation[2]){
-
-    for(int i = 0 ; i < nodeCount ; i++){
-        addVertex( std::to_string(i), nodeLocation[0][i],  );
-    }
-    nodeLocation;
-    for(int i = 0; i < 2; ++i)
-        for(int j = 0; j < nodeCount; ++j)
-            nodeLocation[i][j] = 0;
-
-    int *nodeWeight = new int[nodeCount];
-
-
-
-
-    for(int i = 0; i < nodeCount; ++i){
-        for(int j = 0; j < nodeCount; ++j)
-            if(adjacencyMatrix[i][j] != 0){
-                a = adjacencyMatrix[i][j];
-                ofstre_graphData<<(i+1)<<"\t"<<(j+1)<<"\t"<<adjacencyMatrix[i][j]<<"\n";
-                //ofstre_graphData<<"("<<i<<","<<j<<"):"<<adjacencyMatrix[i][j]<<"\n";
-
-            }
-            else
-                ;//ofstre_graphData<<"-"<<"|";
-        //ofstre_graphData<<"|||\n";
-    }
-
-    for(int j = 0; j < nodeCount; ++j)
-        ofstre_graphData2<<nodeLocation[0][j]<<"\t"<<nodeLocation[1][j]<<endl;
-
-    for(int j = 0; j < nodeCount; ++j)
-        ofstre_graphData3<<nodeWeight[j]<<"\n";
-
-    ofstre_graphData.close();
-    ofstre_graphData2.close();
-    ofstre_graphData3.close();
-
-
-
-}
-void graph::addedge(const string& from, const string& to, double cost)
+void graph::addEdge(const string& from, const string& to, double cost)
 {
     vertex *f = (work.find(from)->second);
     vertex *t = (work.find(to)->second);
     pair<int, vertex *> edge = make_pair(cost, t);
     f->adj.push_back(edge);
+}
+void graph::buildFromMatrices(int** adjacencyMatrix, int nodeCount, int *nodeWeight, int *nodeLocation[2], bool *node_BPIsRight ){
+
+    for(int i = 0 ; i < nodeCount ; i++)
+        addVertex( std::to_string(i), nodeLocation[0][i],nodeLocation[1][i], nodeWeight[i], node_BPIsRight[i]);
+
+    for(int i = 0; i < nodeCount; ++i)
+        for(int j = 0; j < nodeCount; ++j)
+            if(adjacencyMatrix[i][j] != 0)
+                addEdge(std::to_string(i),std::to_string(j),adjacencyMatrix[i][j]);
+            else
+                ;
 }
 void graph::addPrimeEdge(const string& from, const string& to)
 {
@@ -295,21 +267,15 @@ void graph::addPrimeEdge(const string& from, const string& to)
     f->adj.push_back(edge);
 }
 void graph::overlappedConnector(){
-    for(vmap::iterator itr = work.begin() ; itr != work.end() ; itr++){
-        for(vmap::iterator itr2 = work.begin() ; itr2 != work.end() ; itr2++){
+    for(vmap::iterator itr = work.begin() ; itr != work.end() ; itr++)
+        for(vmap::iterator itr2 = work.begin() ; itr2 != work.end() ; itr2++)
             if(itr != itr2){
                 vertex *f = (work.find(from)->second);
                 vertex *t = (work.find(to)->second);
                 if( (f->start > t->start && f->start < t->end ) ||
-                        (f->end > t->start && f->end < t->end )){
+                        (f->end > t->start && f->end < t->end ))
                     addPrimeEdge(f->name,t->name);
-                }
             }
-        }
-    }
 }
-
-
-
 
 #endif // DATASTRUCTURES_H
