@@ -884,12 +884,14 @@ void graphData(){
             nodeLocation[i][j] = 0;
 
     int *nodeWeight = new int[nodeCount];
+    bool *node_BRIsRight = new bool[nodeCount];
 
     int eveCntr = -1;
     for(vector<feasibleEvents>::iterator it = rightE.begin() ;  it != rightE.end(); ++it){
         eveCntr++;
-        nodeLocation[0][eveCntr] = ((it->start)+(it->end))/2;
-        nodeLocation[1][eveCntr] = 1;
+        nodeLocation[0][eveCntr] = (it->start);
+        nodeLocation[1][eveCntr] = (it->end);
+        node_BRIsRight[eveCntr] = true;
         nodeWeight[eveCntr] = it->informatives.size();
         for(int i = 0 ; i < it->connectedEvents.size() ; i++ ){
             adjacencyMatrix[eveCntr][it->connectedEvents[i].index+(it->connectedEvents[i].isRightBP?0:rightCount)]
@@ -898,8 +900,9 @@ void graphData(){
     }
     for(vector<feasibleEvents>::iterator it = leftE.begin() ;  it != leftE.end(); ++it){
         eveCntr++;
-        nodeLocation[0][eveCntr] = (it->start+it->end)/2;
-        nodeLocation[1][eveCntr] = 2;
+        nodeLocation[0][eveCntr] = (it->start);
+        nodeLocation[1][eveCntr] = (it->end);
+        node_BRIsRight[eveCntr] = false;
         nodeWeight[eveCntr] = it->informatives.size();
         for(int i = 0 ; i < it->connectedEvents.size() ; i++ ){
             adjacencyMatrix[eveCntr][(it->connectedEvents[i].index)+(it->connectedEvents[i].isRightBP?0:rightCount)]
@@ -911,31 +914,32 @@ void graphData(){
     // /////////        Write Graph         /////////
 
     int a;
+    ofstre_graphData<<"From+1\tTo+1\tWeight"<<endl;
     for(int i = 0; i < nodeCount; ++i){
         for(int j = 0; j < nodeCount; ++j)
             if(adjacencyMatrix[i][j] != 0){
                 a = adjacencyMatrix[i][j];
                 ofstre_graphData<<(i+1)<<"\t"<<(j+1)<<"\t"<<adjacencyMatrix[i][j]<<"\n";
                 //ofstre_graphData<<"("<<i<<","<<j<<"):"<<adjacencyMatrix[i][j]<<"\n";
-
             }
             else
                 ;//ofstre_graphData<<"-"<<"|";
         //ofstre_graphData<<"|||\n";
     }
-
+    ofstre_graphData2<<"Start\tEnd\tWeight\tBreakPoint"<<endl;
     for(int j = 0; j < nodeCount; ++j)
-        ofstre_graphData2<<nodeLocation[0][j]<<"\t"<<nodeLocation[1][j]<<endl;
+        ofstre_graphData2<<nodeLocation[0][j]<<"\t"<<nodeLocation[1][j]<<"\t"
+                                            <<nodeWeight[j]<<"\t"<<(node_BRIsRight?"BRIsRight (+1)":"BRIsLeft (-1)")<<endl;
 
-    for(int j = 0; j < nodeCount; ++j)
-        ofstre_graphData3<<nodeWeight[j]<<"\n";
+//    for(int j = 0; j < nodeCount; ++j)
+//        ofstre_graphData3<<nodeWeight[j]<<"\n";
 
     ofstre_graphData.close();
     ofstre_graphData2.close();
     ofstre_graphData3.close();
 
     // //////////////////////////////////////////////////////////////////
-    // /////////        Build Graph with adjacency lisyt        /////////
+    // /////////        Build Graph with adjacency list        /////////
     graph a;
 
     // //////////////////////////////////////////////

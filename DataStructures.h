@@ -220,13 +220,13 @@ class graph
 public:
     typedef map<string, vertex *> vmap;
     vmap work;
-    void addvertex(const string&, long long s, long long e, int dep, bool isR);
+    void addVertex(const string&, long long s, long long e, int dep, bool isR);
     void addedge(const string& from, const string& to, double cost);
     void addPrimeEdge(const string& from, const string& to);
     void overlappedConnector();
 };
 
-void graph::addvertex(const string &name, long long s, long long e, int dep, bool isR)
+void graph::addVertex(const string &name, long long s, long long e, int dep, bool isR)
 {
     vmap::iterator itr = work.find(name);
     if (itr == work.end())
@@ -239,6 +239,47 @@ void graph::addvertex(const string &name, long long s, long long e, int dep, boo
     cout << "\nVertex already exists!";
 }
 
+void graph::buildFromMatrices(int** adjacencyMatrix, int nodeCount, int *nodeWeight, int *nodeLocation[2]){
+
+    for(int i = 0 ; i < nodeCount ; i++){
+        addVertex( std::to_string(i), nodeLocation[0][i],  );
+    }
+    nodeLocation;
+    for(int i = 0; i < 2; ++i)
+        for(int j = 0; j < nodeCount; ++j)
+            nodeLocation[i][j] = 0;
+
+    int *nodeWeight = new int[nodeCount];
+
+
+
+
+    for(int i = 0; i < nodeCount; ++i){
+        for(int j = 0; j < nodeCount; ++j)
+            if(adjacencyMatrix[i][j] != 0){
+                a = adjacencyMatrix[i][j];
+                ofstre_graphData<<(i+1)<<"\t"<<(j+1)<<"\t"<<adjacencyMatrix[i][j]<<"\n";
+                //ofstre_graphData<<"("<<i<<","<<j<<"):"<<adjacencyMatrix[i][j]<<"\n";
+
+            }
+            else
+                ;//ofstre_graphData<<"-"<<"|";
+        //ofstre_graphData<<"|||\n";
+    }
+
+    for(int j = 0; j < nodeCount; ++j)
+        ofstre_graphData2<<nodeLocation[0][j]<<"\t"<<nodeLocation[1][j]<<endl;
+
+    for(int j = 0; j < nodeCount; ++j)
+        ofstre_graphData3<<nodeWeight[j]<<"\n";
+
+    ofstre_graphData.close();
+    ofstre_graphData2.close();
+    ofstre_graphData3.close();
+
+
+
+}
 void graph::addedge(const string& from, const string& to, double cost)
 {
     vertex *f = (work.find(from)->second);
