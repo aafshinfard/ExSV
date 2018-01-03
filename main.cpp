@@ -915,7 +915,7 @@ void graphData(){
 
     int a;
     ofstre_graphData<<"From+1\tTo+1\tWeight"<<endl;
-    for(int i = 0; i < nodeCount; ++i){
+    for(int i = 0; i < nodeCount; ++i)
         for(int j = 0; j < nodeCount; ++j)
             if(adjacencyMatrix[i][j] != 0){
                 a = adjacencyMatrix[i][j];
@@ -923,9 +923,8 @@ void graphData(){
                 //ofstre_graphData<<"("<<i<<","<<j<<"):"<<adjacencyMatrix[i][j]<<"\n";
             }
             else
-                ;//ofstre_graphData<<"-"<<"|";
-        //ofstre_graphData<<"|||\n";
-    }
+                ;
+
     ofstre_graphData2<<"Start\tEnd\tWeight\tBreakPoint"<<endl;
     for(int j = 0; j < nodeCount; ++j)
         ofstre_graphData2<<nodeLocation[0][j]<<"\t"<<nodeLocation[1][j]<<"\t"
@@ -943,8 +942,6 @@ void graphData(){
     graph AdjaList;
     AdjaList.buildFromMatrices( adjacencyMatrix, nodeCount, nodeWeight, nodeLocation, node_BPIsRight);
     AdjaList.overlappedConnector();
-
-
 
     // //////////////////////////////////////////////
     // /////////       Motif Finding        /////////

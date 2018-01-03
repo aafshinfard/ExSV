@@ -225,7 +225,21 @@ public:
     void buildFromMatrices(int** adjacencyMatrix, int nodeCount, int *nodeWeight, int *nodeLocation[2], bool *node_BPIsRight );
     void addPrimeEdge(const string& from, const string& to);
     void overlappedConnector();
+    string *dfsNodes(const string nodeName);
 };
+
+string *graph::dfsNodes(const string nodeName){
+    vector<string> dfs_Nodes;
+    vertex *node = work.find(nodeName)->second;
+    typedef pair<int, vertex*> ve;
+    //vector<ve> adj;
+    for(vector<ve>::iterator itr = node->adj.begin() ; itr != node->adj.end() ; ++itr){
+        if(dfs_Nodes.find(itr->first ) == dfs_Nodes.end() ){
+            dfs_Nodes.push_back( itr->first );
+            dfsNodes( itr->first );
+        }
+    }
+}
 
 void graph::addVertex(const string &name, long long s, long long e, int dep, bool isR)
 {
