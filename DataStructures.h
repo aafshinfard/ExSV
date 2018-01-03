@@ -234,8 +234,11 @@ string *graph::dfsNodes(const string nodeName){
     typedef pair<int, vertex*> ve;
     //vector<ve> adj;
     for(vector<ve>::iterator itr = node->adj.begin() ; itr != node->adj.end() ; ++itr){
-        if(dfs_Nodes.find(itr->first ) == dfs_Nodes.end() ){
+        // error
+        if(dfs_Nodes.find( itr->first ) == dfs_Nodes.end() ){
+            // error
             dfs_Nodes.push_back( itr->first );
+            // error
             dfsNodes( itr->first );
         }
     }
