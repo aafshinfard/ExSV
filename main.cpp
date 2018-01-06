@@ -857,6 +857,14 @@ int overlapsMaxDepth(string which, long long start, long long end){
     }
     return overlaps;
 }
+double P_reads_BPC(  ){
+
+}
+
+double P_BPC_SVType(  ){
+
+}
+
 void graphData(){
 
     vector<feasibleEvents> debug_rightE(rightE);
