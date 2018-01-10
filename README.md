@@ -4,11 +4,11 @@
 
 ## Features
 
+* Very fast decetion by expeditiously eliminating non-informative reads.
+
+* Capability of utilizeing a mixture of short reads and long reads.
+
 * Suitable for detection of complex structural variants.
-
-* Fast decetion by expeditiously eliminating non-informative reads.
-
-* Able to use a mixture of short and long reads.
 
 
 ## Author
@@ -19,7 +19,7 @@
 
 ## Cite
 
-* paper to be submitted soon
+* paper to be submitted soon.
 
 ## Copyright (c) 2017
 
