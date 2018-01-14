@@ -5,11 +5,11 @@
 #====================================================================
 ## read data
 library(igraph)
-<<<<<<< HEAD
-=======
+#<<<<<<< HEAD
+#=======
 
 
->>>>>>> 5e7bf2f71818386c65a6e73cd252a10aca92b1d5
+#>>>>>>> 5e7bf2f71818386c65a6e73cd252a10aca92b1d5
 dev.off()
 
 sparseMatrix = read.table("/home/ameer/ExactSV/SV_out/graphData",sep = "\t",col.names=c("row","col","Weight"));
@@ -23,7 +23,40 @@ graphDim = dim(nodeWeights)[1]
 adjaMatrix = matrix(0,graphDim,graphDim)
 adjaMatrix[as.matrix(sparseMatrix[,1:2])]=sparseMatrix[,3]
 sum(as.logical(adjaMatrix))
+class(adjaMatrix)
+dim(adjaMatrix)
 
+myGraph = graph_from_adjacency_matrix(adjaMatrix, mode = c("max"), weighted = TRUE, diag = TRUE,
+                            add.colnames = NULL, add.rownames = NA)
+E(myGraph)
+is_weighted(myGraph)
+tkplot(myGraph)
+plot(myGraph)
+l <-layout.reingold.tilford(myGraph)
+class(l )
+class(nodeLoci)
+l = as.matrix(nodeLoci)
+l2 = l
+l2[,1] = log(l[,1])
+l2[32,1] = 14
+plot(myGraph,
+     layout = l)
+tkplot(myGraph,
+     layout = l2)
+tkplot(myGraph,
+       layout = l)
+a= V(myGraph)
+a[1] = 2
+a = 1:56
+a[1]=2
+a[2]=1
+a
+l = layout_in_circle(myGraph, order = V(myGraph))
+l = layout_in_circle(myGraph, order = a)
+tkplot(myGraph,
+       layout = l)
+node
+l
 #####################################################################################################
 #####################################################################################################
 #####################################################################################################
