@@ -2,6 +2,18 @@
 # To read graphData and visualize the correspondig graph
 # By (Ameer) Amirhossein Afshinfard - a.afshinfard@gmail.com
 # Bioinformatics Research Lab, Sharif Unversity of Technology.
+# https://rstudio-pubs-static.s3.amazonaws.com/74248_3bd99f966ed94a91b36d39d8f21e3dc3.html
+# http://users.cecs.anu.edu.au/~xlx/teaching/css2013/handout/igraph.pdf
+# http://igraph.org/r/doc/tkplot.html
+# https://stackoverflow.com/questions/5364264/how-to-control-the-igraph-plot-layout-with-fixed-positions
+# https://github.com/igraph/rigraph/issues/63
+# http://igraph.org/r/doc/subgraph.html
+# http://www.shizukalab.com/toolkits/sna/plotting-networks-pt-2
+# http://igraph.org/r/doc/decompose.html
+# http://igraph.org/r/doc/components.html
+# http://igraph.org/r/doc/layout_in_circle.html
+# http://igraph.org/r/doc/edge_attr.html
+# 
 #====================================================================
 ## read data
 library(igraph)
