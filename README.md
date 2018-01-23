@@ -1,14 +1,16 @@
 # ExactSV
 
-# not completed yet, evaluation stage.
+# not completed yet, final evaluation stage
 
 ## Features
 
-* Very fast decetion by expeditiously eliminating non-informative reads.
+* Very fast decetion by expeditiously eliminating non-informative reads and focusing on informative ones.
+
+* Prepared to find SVs among haploid, diploid, and cancer genomes.
+
+* Suitable for detection of complex structural variants, exploiting local assemblies.
 
 * Capability of utilizeing a mixture of short reads and long reads.
-
-* Suitable for detection of complex structural variants.
 
 
 ## Author
@@ -19,7 +21,7 @@
 
 ## Cite
 
-* paper to be submitted soon.
+* pre-print will be available in Feb 2018.
 
 ## Copyright (c) 2017
 
