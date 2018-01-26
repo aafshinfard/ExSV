@@ -1001,7 +1001,6 @@ void writeEvents(){
                 ofstre_leftEvents<<endl<<"_____________________________________"<<endl;
             }
         }
-
     }
     ofstre_rightEvents.close();
     ofstre_leftEvents.close();
