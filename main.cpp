@@ -2,6 +2,8 @@
  * @file    main.cpp
  * @author  Amirhosein Afshinfard   <afshinfard(at)ce(.)sharif(.)edu>
  *                                  <afshinfard(at)gmail(.)com>
+ *          Bioinformatics Technology Lab - GSC @ BC Cancer Agency 
+ *					University of British Columbia
  *          Bioinformatics Research Lab - Sharif Uiversity of Technology
  *
  * @cite
