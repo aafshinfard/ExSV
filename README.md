@@ -1,6 +1,6 @@
 # ExactSV
 
-# not completed yet, final evaluation stage
+# not completed yet, final evaluation stage, find the preprint among the files in this repo (a .pdf file).
 
 ## Features
 
