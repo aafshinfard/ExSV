@@ -21,7 +21,7 @@
 
 ## Cite
 
-* pre-print will be available in Feb 2018.
+* pre-print will be available soon.
 
 ## Copyright (c) 2017
 
